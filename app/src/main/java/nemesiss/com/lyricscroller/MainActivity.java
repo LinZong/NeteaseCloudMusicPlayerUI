@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity
                 }
             });
         }
-
+        
         if(IsPause)
         {
             IsPause = false;
@@ -269,14 +269,15 @@ public class MainActivity extends AppCompatActivity
             LyricParserCallable lpc = new LyricParserCallable(getAssets().open("Imawokakerushoujyo.lrc"));
             Future<LyricInfo> lyricParserFuture = pool.submit(lpc);
 
-            lyricInfo = lyricParserFuture.get();
             linearLayoutManager = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
-            lyricRecycleAdapter = new LyricRecycleAdapter(lyricInfo);
             lyricRecycle.setLayoutManager(linearLayoutManager);
+
+            lyricInfo = lyricParserFuture.get();
+            lyricRecycleAdapter = new LyricRecycleAdapter(lyricInfo);
+
             lyricRecycle.setAdapter(lyricRecycleAdapter);
 
             // Let first sentence position to center.
-
             MeasureFirstLyricPaddingTop();
 
         } catch (IOException | InterruptedException | ExecutionException e)

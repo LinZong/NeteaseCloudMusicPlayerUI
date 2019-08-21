@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        android:background="@drawable/ic_background"
+        tools:context=".LyricParser.Activity.PlayerActivity">
+    <android.support.v7.widget.Toolbar
+            android:id="@+id/toolBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:layout_alignParentTop="true"
+            android:background="@android:color/transparent"
+            app:subtitleTextAppearance="@style/player_toolbar_subtitle"
+            app:titleTextAppearance="@style/player_toolbar_title"
+            app:title="演员"
+            app:subtitle="薛之谦"
+            app:navigationIcon="@drawable/ic_arrow_back_gray_24dp"
+            app:contentInsetStartWithNavigation="-24dp"
+    >
+    </android.support.v7.widget.Toolbar>
+
+
+    <LinearLayout
+            android:id="@+id/llPlayOption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingBottom="20dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingTop="10dp"
+    >
+
+        <ImageView
+                android:id="@+id/ivLast"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_last"/>
+
+        <ImageView
+                android:id="@+id/ivPlayOrPause"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="32dp"
+                android:layout_marginStart="32dp"
+                android:src="@drawable/ic_play"/>
+
+        <ImageView
+                android:id="@+id/ivNext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_next"/>
+    </LinearLayout>
+</RelativeLayout>
