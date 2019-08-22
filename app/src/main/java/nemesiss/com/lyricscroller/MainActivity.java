@@ -64,6 +64,167 @@ public class MainActivity extends AppCompatActivity
         ViewCompat.setNestedScrollingEnabled(lyricRecycle, false);
     }
 
+
+
+    private void PauseMedia() {
+        if(mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            IsPlaying = false;
+            IsPause = true;
+        }
+    }
+
+    private void PrepareMediaPlayer()
+    {
+        if(mediaPlayer == null)
+        {
+            CurrentLyric = 0;
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
+            {
+                @Override
+                public void onPrepared(MediaPlayer mediaPlayer)
+                {
+                    IsPlaying = true;
+                    IsPause = false;
+                    BeginScrollingLyric();
+                    mediaPlayer.start();
+                }
+            });
+        }
+        
+        if(IsPause)
+        {
+            IsPause = false;
+            IsPlaying = true;
+            mediaPlayer.start();
+            BeginScrollingLyric();
+        }
+        else
+        {
+            mediaPlayer.reset();
+            CurrentLyric = 0;
+            try
+            {
+                AssetFileDescriptor afd = getAssets().openFd("Imawokakerushoujyo.mp3");
+                mediaPlayer.setDataSource(afd.getFileDescriptor(),afd.getStartOffset(),afd.getLength());
+                mediaPlayer.prepareAsync();
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    @OnClick({R.id.TogglePlayOrPause})
+    void TogglePlayOrPause()
+    {
+        if(!IsPlaying)
+            PrepareMediaPlayer();
+        else
+            PauseMedia();
+    }
+
+
+
+    @OnClick({R.id.ScrollNext})
+    void ScrollNext()
+    {
+        if (0 <= CurrentLyric && CurrentLyric < lyricInfo.getSentences().size() - 1)
+        {
+            int next = CurrentLyric + 1;
+            CurrentPosition.setText(String.valueOf(next));
+
+            ChangeSentenceColor(CurrentLyric,false);
+            ChangeSentenceColor(next,true);
+
+            CurrentLyric++;
+        }
+    }
+
+    @OnClick({R.id.ScrollBefore})
+    void ScrollBefore()
+    {
+        if (0 < CurrentLyric && CurrentLyric <= lyricInfo.getSentences().size() - 1)
+        {
+            int before = CurrentLyric - 1;
+            CurrentPosition.setText(String.valueOf(before));
+
+            ChangeSentenceColor(CurrentLyric,false);
+            ChangeSentenceColor(before,true);
+
+            CurrentLyric--;
+        }
+    }
+
+    private void MeasureFirstLyricPaddingTop()
+    {
+        lyricRecycle.post(() -> {
+            recycleViewHeight = LyricRecycleContainer.getHeight();
+            lyricRecycle.setPadding(0, recycleViewHeight / 2, 0, recycleViewHeight / 2);
+            lyricRecycle.scrollToPosition(0);
+            ChangeSentenceColor(0,true);
+        });
+    }
+    private void ChangeSentenceColor(int position,boolean IsHighlight)
+    {
+        RecyclerView.ViewHolder holder = lyricRecycle.findViewHolderForAdapterPosition(position);
+        if (holder != null)
+        {
+            TextView sentence = holder.itemView.findViewById(R.id.LyricRecycle_Sentence);
+            sentence.setTextColor(IsHighlight ? Color.BLACK : Color.rgb(162, 162, 162));
+
+            if(IsHighlight)
+                ScrollToCenter(position, holder.itemView);
+        }
+    }
+
+    private void ScrollToCenter(int position,View view)
+    {
+        int height = view.getHeight();
+        int totalHeight = height * position;
+        int begin = LyricRecycleContainer.getScrollY();
+        BeginSmoothScroll(begin, totalHeight);
+    }
+
+    private void BeginSmoothScroll(int begin,int end)
+    {
+        ValueAnimator va = ValueAnimator.ofInt(begin,end);
+        va.setDuration(300);
+        va.addUpdateListener(valueAnimator -> {
+            int curr = (int) valueAnimator.getAnimatedValue();
+            LyricRecycleContainer.scrollTo(0,curr);
+        });
+        va.start();
+    }
+    private void InitLyrics()
+    {
+        try
+        {
+            Log.d(TAG, "InitLyrics's thread "+Thread.currentThread().getId());
+
+
+            ExecutorService pool = Executors.newFixedThreadPool(1);
+            LyricParserCallable lpc = new LyricParserCallable(getAssets().open("Imawokakerushoujyo.lrc"));
+            Future<LyricInfo> lyricParserFuture = pool.submit(lpc);
+
+            linearLayoutManager = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
+            lyricRecycle.setLayoutManager(linearLayoutManager);
+
+            lyricInfo = lyricParserFuture.get();
+            lyricRecycleAdapter = new LyricRecycleAdapter(lyricInfo);
+
+            lyricRecycle.setAdapter(lyricRecycleAdapter);
+
+            // Let first sentence position to center.
+            MeasureFirstLyricPaddingTop();
+
+        } catch (IOException | InterruptedException | ExecutionException e)
+        {
+            e.printStackTrace();
+        }
+    }
     private void BeginScrollingLyric()
     {
         new Thread(() -> {
@@ -127,164 +288,8 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void PauseMedia() {
-        if(mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            IsPlaying = false;
-            IsPause = true;
-        }
-    }
-
-    private void PrepareMediaPlayer()
-    {
-        if(mediaPlayer == null)
-        {
-            CurrentLyric = 0;
-            mediaPlayer = new MediaPlayer();
-            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
-            {
-                @Override
-                public void onPrepared(MediaPlayer mediaPlayer)
-                {
-                    IsPlaying = true;
-                    IsPause = false;
-                    BeginScrollingLyric();
-                    mediaPlayer.start();
-                }
-            });
-        }
-        
-        if(IsPause)
-        {
-            IsPause = false;
-            IsPlaying = true;
-            mediaPlayer.start();
-            BeginScrollingLyric();
-        }
-        else
-        {
-            mediaPlayer.reset();
-            CurrentLyric = 0;
-            try
-            {
-                AssetFileDescriptor afd = getAssets().openFd("Imawokakerushoujyo.mp3");
-                mediaPlayer.setDataSource(afd.getFileDescriptor(),afd.getStartOffset(),afd.getLength());
-                mediaPlayer.prepareAsync();
-            } catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-    }
-
-    @OnClick({R.id.TogglePlayOrPause})
-    void TogglePlayOrPause()
-    {
-        if(!IsPlaying)
-            PrepareMediaPlayer();
-        else
-            PauseMedia();
-    }
-
-    private void MeasureFirstLyricPaddingTop()
-    {
-        lyricRecycle.post(() -> {
-            recycleViewHeight = LyricRecycleContainer.getHeight();
-            lyricRecycle.setPadding(0, recycleViewHeight / 2, 0, recycleViewHeight / 2);
-            lyricRecycle.scrollToPosition(0);
-            ChangeSentenceColor(0,true);
-        });
-    }
-
-    @OnClick({R.id.ScrollNext})
-    void ScrollNext()
-    {
-        if (0 <= CurrentLyric && CurrentLyric < lyricInfo.getSentences().size() - 1)
-        {
-            int next = CurrentLyric + 1;
-            CurrentPosition.setText(String.valueOf(next));
-
-            ChangeSentenceColor(CurrentLyric,false);
-            ChangeSentenceColor(next,true);
-
-            CurrentLyric++;
-        }
-    }
-
-    @OnClick({R.id.ScrollBefore})
-    void ScrollBefore()
-    {
-        if (0 < CurrentLyric && CurrentLyric <= lyricInfo.getSentences().size() - 1)
-        {
-            int before = CurrentLyric - 1;
-            CurrentPosition.setText(String.valueOf(before));
-
-            ChangeSentenceColor(CurrentLyric,false);
-            ChangeSentenceColor(before,true);
-
-            CurrentLyric--;
-        }
-    }
-
-    private void ChangeSentenceColor(int position,boolean IsHighlight)
-    {
-        RecyclerView.ViewHolder holder = lyricRecycle.findViewHolderForAdapterPosition(position);
-        if (holder != null)
-        {
-            TextView sentence = holder.itemView.findViewById(R.id.LyricRecycle_Sentence);
-            sentence.setTextColor(IsHighlight ? Color.BLACK : Color.rgb(162, 162, 162));
-
-            if(IsHighlight)
-                ScrollToCenter(position, holder.itemView);
-        }
-    }
-
-    private void ScrollToCenter(int position,View view)
-    {
-        int height = view.getHeight();
-        int totalHeight = height * position;
-        int begin = LyricRecycleContainer.getScrollY();
-        BeginSmoothScroll(begin, totalHeight);
-    }
-
-    private void BeginSmoothScroll(int begin,int end)
-    {
-        ValueAnimator va = ValueAnimator.ofInt(begin,end);
-        va.setDuration(300);
-        va.addUpdateListener(valueAnimator -> {
-            int curr = (int) valueAnimator.getAnimatedValue();
-            LyricRecycleContainer.scrollTo(0,curr);
-        });
-        va.start();
-    }
-    private void InitLyrics()
-    {
-        try
-        {
-            Log.d(TAG, "InitLyrics's thread "+Thread.currentThread().getId());
 
 
-            ExecutorService pool = Executors.newFixedThreadPool(1);
-            LyricParserCallable lpc = new LyricParserCallable(getAssets().open("Imawokakerushoujyo.lrc"));
-            Future<LyricInfo> lyricParserFuture = pool.submit(lpc);
-
-            linearLayoutManager = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
-            lyricRecycle.setLayoutManager(linearLayoutManager);
-
-            lyricInfo = lyricParserFuture.get();
-            lyricRecycleAdapter = new LyricRecycleAdapter(lyricInfo);
-
-            lyricRecycle.setAdapter(lyricRecycleAdapter);
-
-            // Let first sentence position to center.
-            MeasureFirstLyricPaddingTop();
-
-        } catch (IOException | InterruptedException | ExecutionException e)
-        {
-            e.printStackTrace();
-        }
-    }
 
     class LyricParserCallable implements Callable<LyricInfo>
     {

@@ -24,7 +24,7 @@ public class DisplayUtil {
 
     /*唱盘比例*/
     public static final float SCALE_DISC_SIZE = (float) (804.0 / BASE_SCREEN_WIDTH);
-    public static final float SCALE_DISC_MARGIN_TOP = (float) (210 / BASE_SCREEN_HEIGHT);
+    public static final float SCALE_DISC_MARGIN_TOP = (float) (215 / BASE_SCREEN_HEIGHT);
 
     /*专辑图片比例*/
     public static final float SCALE_MUSIC_PIC_SIZE = (float) (532.0 / BASE_SCREEN_WIDTH);
@@ -58,6 +58,45 @@ public class DisplayUtil {
             CropStartX = (width - height) / 2;
             CropStartY = 0;
         }
-        return new BitmapRectCropInfo(CropStartX,CropStartY,CropStartX + minEdge, CropStartY + minEdge,minEdge);
+        return new BitmapRectCropInfo(
+                CropStartX,
+                CropStartY,
+                CropStartX + minEdge,
+                CropStartY + minEdge,
+                minEdge);
+    }
+
+
+    public static BitmapRectCropInfo GetPlayerBackgroundCropPixel(Bitmap OriginalAlbumPhoto,float DisplayWHRatio)
+    {
+        int width = OriginalAlbumPhoto.getWidth();
+        int height = OriginalAlbumPhoto.getHeight();
+
+        int minEdge = Math.min(width,height);
+        int CropStartX = 0, CropStartY = 0, CroppedWidth = 0, CroppedHeight = 0;
+
+        if(minEdge == width)
+        {
+            // 切割高
+            CroppedHeight = (int) (width / DisplayWHRatio);
+            CropStartX = 0;
+            CropStartY = (height - CroppedHeight) / 2;
+            CroppedWidth = width;
+        }
+        else
+        {
+            CroppedHeight = height;
+            CroppedWidth = (int) (height * (DisplayWHRatio));
+            // 切割宽
+            CropStartY = 0;
+            CropStartX = (width - CroppedWidth) / 2;
+        }
+        return new BitmapRectCropInfo(
+                CropStartX,
+                CropStartY,
+                CropStartX + CroppedWidth,
+                CropStartY + CroppedHeight,
+                0);
+
     }
 }

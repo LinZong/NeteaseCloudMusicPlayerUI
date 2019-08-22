@@ -6,6 +6,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true"
+        android:id="@+id/player_root"
         android:background="@drawable/ic_background2"
         tools:context=".LyricParser.Activity.PlayerActivity">
     <android.support.v7.widget.Toolbar
@@ -35,21 +36,47 @@
             android:layout_below="@id/toolBar"
             android:id="@+id/disc_view"
             android:layout_above="@id/seekbar_container"
-            android:layout_height="150dp">
+            android:layout_height="match_parent">
 
-        <ImageView android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
-                   android:src="@drawable/ic_disc"
-                   android:id="@+id/disc_image"
-                   android:layout_centerHorizontal="true"/>
+        <RelativeLayout android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:id="@+id/disc_needle_container"
+                        android:visibility="visible"
+        >
+            <ImageView android:layout_width="wrap_content"
+                       android:layout_height="wrap_content"
+                       android:src="@drawable/ic_disc"
+                       android:id="@+id/disc_image"
+                       android:layout_centerHorizontal="true"/>
 
 
-        <ImageView android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
-                   android:id="@+id/llNeedle"
-                   android:src="@drawable/ic_needle"/>
+            <ImageView android:layout_width="wrap_content"
+                       android:layout_height="wrap_content"
+                       android:id="@+id/llNeedle"
+                       android:src="@drawable/ic_needle"/>
+        </RelativeLayout>
 
-
+        <RelativeLayout
+                android:id="@+id/disc_lyric_container"
+                android:layout_width="match_parent"
+                android:visibility="invisible"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_height="match_parent">
+            <nemesiss.com.lyricscroller.LyricParser.View.LyricScrollerView android:layout_width="match_parent"
+                                                        android:layout_height="match_parent"
+                                                        android:id="@+id/disc_lyric_scroller"
+                                                        android:background="@android:color/transparent"
+                                                        android:layout_marginTop="4dp"
+                                                        android:layout_marginBottom="12dp"
+            >
+                <android.support.v7.widget.RecyclerView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:id="@+id/disc_lyric"
+                        android:clipToPadding="false"/>
+            </nemesiss.com.lyricscroller.LyricParser.View.LyricScrollerView>
+        </RelativeLayout>
     </nemesiss.com.lyricscroller.LyricParser.View.DiscView>
 
     <android.support.constraint.ConstraintLayout android:layout_width="match_parent"

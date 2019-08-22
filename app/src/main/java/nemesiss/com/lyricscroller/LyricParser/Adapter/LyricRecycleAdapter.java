@@ -2,15 +2,20 @@ package nemesiss.com.lyricscroller.LyricParser.Adapter;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import lombok.Getter;
+import lombok.Setter;
 import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
 import nemesiss.com.lyricscroller.R;
 
+@Getter
+@Setter
 public class LyricRecycleAdapter extends RecyclerView.Adapter<LyricRecycleAdapter.LyricRecycleViewHolder>
 {
 
@@ -26,6 +31,7 @@ public class LyricRecycleAdapter extends RecyclerView.Adapter<LyricRecycleAdapte
     public LyricRecycleViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i)
     {
         View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.lyric_sentence,viewGroup,false);
+//        view.setOnClickListener(v -> viewGroup.callOnClick());
         return new LyricRecycleViewHolder(view);
     }
 
