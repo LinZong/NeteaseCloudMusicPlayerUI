@@ -6,7 +6,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true"
-        android:background="@drawable/ic_background"
+        android:background="@drawable/ic_background2"
         tools:context=".LyricParser.Activity.PlayerActivity">
     <android.support.v7.widget.Toolbar
             android:id="@+id/toolBar"
@@ -18,11 +18,100 @@
             app:titleTextAppearance="@style/player_toolbar_title"
             app:title="演员"
             app:subtitle="薛之谦"
-            app:navigationIcon="@drawable/ic_arrow_back_gray_24dp"
+            app:titleTextColor="#fff"
+            app:subtitleTextColor="#fff"
+            app:navigationIcon="@drawable/ic_arrow_back_white_24dp"
             app:contentInsetStartWithNavigation="-24dp"
     >
+        <ImageView android:layout_width="24dp"
+                   android:layout_height="24dp"
+                   android:layout_marginEnd="24dp"
+                   android:layout_gravity="end"
+                   android:src="@drawable/share"/>
     </android.support.v7.widget.Toolbar>
 
+    <nemesiss.com.lyricscroller.LyricParser.View.DiscView
+            android:layout_width="match_parent"
+            android:layout_below="@id/toolBar"
+            android:id="@+id/disc_view"
+            android:layout_above="@id/seekbar_container"
+            android:layout_height="150dp">
+
+        <ImageView android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/ic_disc"
+                   android:id="@+id/disc_image"
+                   android:layout_centerHorizontal="true"/>
+
+
+        <ImageView android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:id="@+id/llNeedle"
+                   android:src="@drawable/ic_needle"/>
+
+
+    </nemesiss.com.lyricscroller.LyricParser.View.DiscView>
+
+    <android.support.constraint.ConstraintLayout android:layout_width="match_parent"
+                                                 android:layout_height="48dp"
+                                                 android:layout_marginBottom="12dp"
+                                                 android:id="@+id/llOperation"
+                                                 android:layout_above="@id/llPlayOption">
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/like"
+                   android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"
+                   android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent" android:id="@+id/imageView2"
+                   app:layout_constraintStart_toStartOf="parent" app:layout_constraintHorizontal_bias="0.5"
+                   app:layout_constraintEnd_toStartOf="@+id/imageView"/>
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/download"
+                   android:layout_marginBottom="8dp"
+                   app:layout_constraintBottom_toBottomOf="parent" android:layout_marginTop="8dp"
+                   app:layout_constraintTop_toTopOf="parent" android:id="@+id/imageView"
+                   app:layout_constraintStart_toEndOf="@+id/imageView2" app:layout_constraintHorizontal_bias="0.5"
+                   app:layout_constraintEnd_toStartOf="@+id/imageView3"/>
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/comment"
+                   android:id="@+id/imageView3" app:layout_constraintStart_toEndOf="@+id/imageView"
+                   app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toStartOf="@+id/imageView4"
+                   android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent"
+                   android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"/>
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/preference"
+                   android:id="@+id/imageView4" app:layout_constraintStart_toEndOf="@+id/imageView3"
+                   app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"
+                   android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent"
+                   android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"/>
+    </android.support.constraint.ConstraintLayout>
+
+    <RelativeLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/seekbar_container"
+                    android:layout_marginBottom="10dp"
+                    android:layout_above="@id/llOperation">
+
+        <TextView style="@style/netease_music_time_text_sytle"
+                  android:id="@+id/seekbar_currTime"
+                  android:layout_alignParentStart="true"
+                  android:layout_centerVertical="true"
+                  android:text="03:27"
+                  android:layout_marginStart="12dp"
+                  />
+
+        <SeekBar android:layout_width="wrap_content"
+                 android:layout_toEndOf="@id/seekbar_currTime"
+                 android:layout_toStartOf="@id/seekbar_TotalTime"
+                 android:layout_height="wrap_content"
+                 android:progress="20"
+                 android:id="@+id/disc_seekbar"
+                 style="@style/netease_music_time_seek_bar_sytle"
+                 android:layout_centerVertical="true"
+                 />
+
+        <TextView style="@style/netease_music_time_text_sytle"
+                  android:layout_alignParentEnd="true"
+                  android:layout_centerVertical="true"
+                  android:id="@+id/seekbar_TotalTime"
+                  android:text="09:27"
+                  android:layout_marginEnd="12dp"
+        />
+    </RelativeLayout>
 
     <LinearLayout
             android:id="@+id/llPlayOption"
@@ -36,25 +125,36 @@
             android:paddingRight="20dp"
             android:paddingTop="10dp"
     >
-
+        <ImageView
+                android:id="@+id/ivLoop"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="56dp"
+                android:src="@drawable/looplist"/>
         <ImageView
                 android:id="@+id/ivLast"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_last"/>
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/last"/>
 
         <ImageView
                 android:id="@+id/ivPlayOrPause"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_marginEnd="32dp"
                 android:layout_marginStart="32dp"
-                android:src="@drawable/ic_play"/>
+                android:src="@drawable/play"/>
 
         <ImageView
                 android:id="@+id/ivNext"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_next"/>
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/next"/>
+        <ImageView
+                android:layout_marginStart="56dp"
+                android:id="@+id/ivList"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/playlist"/>
     </LinearLayout>
 </RelativeLayout>
