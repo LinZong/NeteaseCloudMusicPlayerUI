@@ -21,9 +21,12 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toolbar;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import lombok.Getter;
+import lombok.Setter;
 import nemesiss.com.lyricscroller.LyricParser.Adapter.LyricRecycleAdapter;
 import nemesiss.com.lyricscroller.LyricParser.Model.BitmapRectCropInfo;
 import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
@@ -32,6 +35,7 @@ import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
 import nemesiss.com.lyricscroller.R;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class DiscView extends RelativeLayout
 {
@@ -47,23 +51,20 @@ public class DiscView extends RelativeLayout
 
     // 视图组件对象绑定
 
-    @BindView(R.id.llNeedle)
-    ImageView NeedleIv;
-
     @BindView(R.id.disc_image)
-    ImageView DiscImage;
+    public ImageView DiscImage;
 
     @BindView(R.id.disc_lyric_scroller)
-    LyricScrollerView LyricScroller;
+    public LyricScrollerView LyricScroller;
 
     @BindView(R.id.disc_lyric)
-    LyricWaterfall LyricRecyclerView;
+    public LyricWaterfall LyricRecyclerView;
 
     @BindView(R.id.disc_needle_container)
-    RelativeLayout DiscNeedleContainer;
+    public RelativeLayout DiscNeedleContainer;
 
     @BindView(R.id.disc_lyric_container)
-    RelativeLayout LyricContainer;
+    public RelativeLayout LyricContainer;
 
 
     private Drawable DiscBackgroundDrawable;
@@ -71,7 +72,6 @@ public class DiscView extends RelativeLayout
     // 歌词显示布局控制
 
     private ValueAnimator SwitchDiscAndLyricAnimator;
-
     private LinearLayoutManager LyricLayoutManager;
     private LyricRecycleAdapter LyricAdapter;
     private boolean IsShowLyric = false;
@@ -80,6 +80,14 @@ public class DiscView extends RelativeLayout
 
     private int CurrentLyricSentenceIndex = 0;
     private LyricInfo lyricInfo;
+
+    @Getter
+    @Setter
+    private OnClickListener DiscViewClickListener;
+
+    @Getter
+    @Setter
+    private OnClickListener LyricViewClickListener;
 
     public DiscView(Context context)
     {
@@ -105,7 +113,6 @@ public class DiscView extends RelativeLayout
         mDiscImageWidth = DiscImage.getWidth();
         mDiscImageHeight = DiscImage.getHeight();
 
-        Log.d("DiscView",String.valueOf(mDiscImageWidth));
     }
 
     @Override
@@ -123,7 +130,7 @@ public class DiscView extends RelativeLayout
         mScreenHeight = DisplayUtil.getScreenHeight(getContext());
 
         InitDiscViewBackground();
-        NeedleIv.post(this::InitNeedle);
+
     }
 
 
@@ -180,25 +187,6 @@ public class DiscView extends RelativeLayout
         DiscImage.setLayoutParams(layoutParams);
     }
 
-    private void InitNeedle()
-    {
-        int needleWidth = NeedleIv.getWidth();
-        int needleHeight = NeedleIv.getHeight();
-
-        int marginLeft = (int) (DisplayUtil.SCALE_NEEDLE_MARGIN_LEFT * mScreenWidth);
-
-        RelativeLayout.LayoutParams layoutParams = (LayoutParams) NeedleIv.getLayoutParams();
-        layoutParams.setMargins(marginLeft,0 , 0, 0);
-
-        NeedleIv.setLayoutParams(layoutParams);
-
-        float pivotX = DisplayUtil.SCALE_NEEDLE_PIVOT_X * needleWidth;
-        float pivotY = DisplayUtil.SCALE_NEEDLE_PIVOT_X * needleHeight;
-
-        NeedleIv.setPivotX(pivotX);
-        NeedleIv.setPivotY(pivotY);
-        NeedleIv.setRotation(0);
-    }
 
 
     // =========================  Control Lyric View ======================================
@@ -349,11 +337,13 @@ public class DiscView extends RelativeLayout
     @OnClick({R.id.disc_needle_container})
     void SwitchToLyricView()
     {
+        if(DiscViewClickListener != null) DiscViewClickListener.onClick(this);
         AnimateDiscAndLyricSwitch(DiscNeedleContainer,LyricContainer);
     }
     @OnClick({R.id.disc_lyric_container,R.id.disc_lyric_scroller,R.id.disc_lyric})
     void SwitchToDiscView()
     {
+        if(LyricViewClickListener != null) LyricViewClickListener.onClick(this);
         AnimateDiscAndLyricSwitch(LyricContainer,DiscNeedleContainer);
     }
 
@@ -401,13 +391,7 @@ public class DiscView extends RelativeLayout
     }
 
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event)
-    {
 
-
-        return true;
-    }
 
     private int Dp2Px(int dp) {
         final float scale = getResources().getDisplayMetrics().density;

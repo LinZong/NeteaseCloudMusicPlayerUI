@@ -75,28 +75,33 @@ public class DisplayUtil {
         int minEdge = Math.min(width,height);
         int CropStartX = 0, CropStartY = 0, CroppedWidth = 0, CroppedHeight = 0;
 
-        if(minEdge == width)
-        {
-            // 切割高
-            CroppedHeight = (int) (width / DisplayWHRatio);
-            CropStartX = 0;
-            CropStartY = (height - CroppedHeight) / 2;
-            CroppedWidth = width;
-        }
-        else
-        {
-            CroppedHeight = height;
-            CroppedWidth = (int) (height * (DisplayWHRatio));
-            // 切割宽
-            CropStartY = 0;
-            CropStartX = (width - CroppedWidth) / 2;
-        }
-        return new BitmapRectCropInfo(
-                CropStartX,
-                CropStartY,
-                CropStartX + CroppedWidth,
-                CropStartY + CroppedHeight,
-                0);
-
+        // width 切割
+         int newWidth = (int) (height * (DisplayWHRatio));
+         int newHeight = height;
+         if(newWidth <= width)
+         {
+             // OK
+             int startX = (int) ((float)(width - newWidth) / 2);
+             return new BitmapRectCropInfo(startX,
+                     0,
+                     startX + newWidth,
+                     newHeight,
+                     0);
+         }
+         else
+         {
+             newHeight = (int) (width / DisplayWHRatio);
+             newWidth = width;
+             if(newHeight < height)
+             {
+                 int startY = (int) ((float) (height - (newHeight)) /2);
+                 return new BitmapRectCropInfo(0,
+                         startY,
+                         newWidth,
+                         startY + newHeight,
+                         0);
+             }
+         }
+         throw new IllegalArgumentException("图片分辨率不正确");
     }
 }

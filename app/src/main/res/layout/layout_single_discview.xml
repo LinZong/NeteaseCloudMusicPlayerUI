@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nemesiss.com.lyricscroller.LyricParser.View.DiscView
+        android:layout_width="match_parent"
+        android:layout_below="@id/toolBar"
+        android:layout_above="@id/seekbar_container"
+        android:layout_height="match_parent"
+        xmlns:android="http://schemas.android.com/apk/res/android">
+    <RelativeLayout android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/disc_needle_container"
+                    android:visibility="visible"
+    >
+        <ImageView android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/ic_disc"
+                   android:id="@+id/disc_image"
+                   android:layout_centerHorizontal="true"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+            android:id="@+id/disc_lyric_container"
+            android:layout_width="match_parent"
+            android:visibility="invisible"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_height="match_parent">
+        <nemesiss.com.lyricscroller.LyricParser.View.LyricScrollerView android:layout_width="match_parent"
+                                                                       android:layout_height="match_parent"
+                                                                       android:id="@+id/disc_lyric_scroller"
+                                                                       android:clickable="true"
+                                                                       android:focusable="true"
+                                                                       android:focusableInTouchMode="true"
+                                                                       android:background="@android:color/transparent"
+                                                                       android:layout_marginTop="4dp"
+                                                                       android:layout_marginBottom="12dp"
+                                                                       android:overScrollMode="never"
+        >
+            <nemesiss.com.lyricscroller.LyricParser.View.LyricWaterfall
+                    android:overScrollMode="never"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:id="@+id/disc_lyric"
+                    android:clipToPadding="false"/>
+        </nemesiss.com.lyricscroller.LyricParser.View.LyricScrollerView>
+    </RelativeLayout>
+</nemesiss.com.lyricscroller.LyricParser.View.DiscView>

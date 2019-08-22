@@ -10,7 +10,11 @@ import android.view.MotionEvent;
 
 public class LyricScrollerView extends NestedScrollView
 {
-    private boolean NoNeedSwitch = false;
+
+    private int MoveX = 0, MoveY = 0, DownX = 0, DownY = 0;
+    private long TouchTime = 0;
+
+
     public LyricScrollerView(@NonNull Context context)
     {
         super(context);
@@ -39,22 +43,38 @@ public class LyricScrollerView extends NestedScrollView
         super.onTouchEvent(ev);
         int action = ev.getAction();
 
-        if(action == 2)
-        {
-            NoNeedSwitch = true;
-        }
-        if(action == 1)
-        {
-            if(NoNeedSwitch)
+        switch (action){
+            case MotionEvent.ACTION_DOWN:
             {
-                NoNeedSwitch = false;
+                MoveX = 0;
+                MoveY = 0;
+                DownX = (int) (ev.getX()) ;DownY = (int) ev.getY();
+                TouchTime = System.currentTimeMillis();
+                break;
             }
-            else
+            case MotionEvent.ACTION_MOVE:
             {
-                callOnClick();
+                int CurrX = (int) ev.getX(), CurrY = (int) ev.getY();
+                MoveX += Math.abs(CurrX - DownX);
+                MoveY += Math.abs(CurrY - DownY);
+                DownX = CurrX;
+                DownY = CurrY;
+                break;
+            }
+            case MotionEvent.ACTION_UP:
+            {
+                long currTime = System.currentTimeMillis();
+                if((currTime - TouchTime) > 50 && (MoveY > 20 || MoveX > 20))
+                    break;
+                else callOnClick();
             }
         }
-
         return true;
+    }
+
+    @Override
+    public void fling(int velocityY)
+    {
+        super.fling(velocityY / 5);
     }
 }
