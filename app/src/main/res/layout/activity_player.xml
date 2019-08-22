@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<nemesiss.com.lyricscroller.LyricParser.View.PlayerRootView
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -66,13 +66,19 @@
             <nemesiss.com.lyricscroller.LyricParser.View.LyricScrollerView android:layout_width="match_parent"
                                                         android:layout_height="match_parent"
                                                         android:id="@+id/disc_lyric_scroller"
+                                                                           android:clickable="true"
+                                                                           android:focusable="true"
+                                                                           android:focusableInTouchMode="true"
                                                         android:background="@android:color/transparent"
                                                         android:layout_marginTop="4dp"
                                                         android:layout_marginBottom="12dp"
             >
-                <android.support.v7.widget.RecyclerView
+                <nemesiss.com.lyricscroller.LyricParser.View.LyricWaterfall
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
                         android:id="@+id/disc_lyric"
                         android:clipToPadding="false"/>
             </nemesiss.com.lyricscroller.LyricParser.View.LyricScrollerView>
@@ -184,4 +190,4 @@
                 android:layout_height="24dp"
                 android:src="@drawable/playlist"/>
     </LinearLayout>
-</RelativeLayout>
+</nemesiss.com.lyricscroller.LyricParser.View.PlayerRootView>

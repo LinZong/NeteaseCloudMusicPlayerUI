@@ -11,6 +11,7 @@ import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -27,6 +28,7 @@ import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
 import nemesiss.com.lyricscroller.LyricParser.Utils.FastBlurUtil;
 import nemesiss.com.lyricscroller.LyricParser.View.DiscView;
+import nemesiss.com.lyricscroller.LyricParser.View.PlayerRootView;
 import nemesiss.com.lyricscroller.R;
 
 import java.io.*;
@@ -45,7 +47,7 @@ public class PlayerActivity extends AppCompatActivity
     DiscView discView;
 
     @BindView(R.id.player_root)
-    RelativeLayout PlayerRootLayout;
+    PlayerRootView PlayerRootLayout;
 
     private static final String DefaultBackgroundImage = "74746927_p0.png";
     private static final String DefaultLyricFile = "ShiawaseShindoromu.lrc";
@@ -62,7 +64,9 @@ public class PlayerActivity extends AppCompatActivity
         InitSeekbar();
         LoadDiscImage();
         LoadLyric();
+
     }
+
 
     private void InitScreenResolution()
     {
@@ -107,7 +111,7 @@ public class PlayerActivity extends AppCompatActivity
 
             Drawable backgroundDrawable = new BitmapDrawable(getResources(), blurBackground);
             backgroundDrawable.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);
-            runOnUiThread(() -> PlayerRootLayout.setBackground(backgroundDrawable));
+            runOnUiThread(() -> PlayerRootLayout.SetPlayerBackground(backgroundDrawable));
         }).start();
     }
 

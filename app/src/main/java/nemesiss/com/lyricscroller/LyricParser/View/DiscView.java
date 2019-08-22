@@ -57,7 +57,7 @@ public class DiscView extends RelativeLayout
     LyricScrollerView LyricScroller;
 
     @BindView(R.id.disc_lyric)
-    RecyclerView LyricRecyclerView;
+    LyricWaterfall LyricRecyclerView;
 
     @BindView(R.id.disc_needle_container)
     RelativeLayout DiscNeedleContainer;
@@ -69,6 +69,8 @@ public class DiscView extends RelativeLayout
     private Drawable DiscBackgroundDrawable;
 
     // 歌词显示布局控制
+
+    private ValueAnimator SwitchDiscAndLyricAnimator;
 
     private LinearLayoutManager LyricLayoutManager;
     private LyricRecycleAdapter LyricAdapter;
@@ -115,6 +117,7 @@ public class DiscView extends RelativeLayout
 
         // 屏蔽RecyclerView自带滚动，全程使用NestedScrollView托管。
         ViewCompat.setNestedScrollingEnabled(LyricRecyclerView, false);
+        LyricRecyclerView.setNestedScrollingEnabled(false);
 
         mScreenWidth = DisplayUtil.getScreenWidth(getContext());
         mScreenHeight = DisplayUtil.getScreenHeight(getContext());
@@ -346,24 +349,25 @@ public class DiscView extends RelativeLayout
     @OnClick({R.id.disc_needle_container})
     void SwitchToLyricView()
     {
-//        DiscNeedleContainer.setVisibility(GONE);
-//        LyricContainer.setVisibility(VISIBLE);
         AnimateDiscAndLyricSwitch(DiscNeedleContainer,LyricContainer);
     }
     @OnClick({R.id.disc_lyric_container,R.id.disc_lyric_scroller,R.id.disc_lyric})
     void SwitchToDiscView()
     {
-//        DiscNeedleContainer.setVisibility(VISIBLE);
-//        LyricContainer.setVisibility(GONE);
         AnimateDiscAndLyricSwitch(LyricContainer,DiscNeedleContainer);
     }
 
 
     private void AnimateDiscAndLyricSwitch(View dim, View show)
     {
-        ValueAnimator va = ValueAnimator.ofFloat(0,1);
-        va.setDuration(200);
-        va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener()
+
+        if(SwitchDiscAndLyricAnimator != null)
+        {
+            SwitchDiscAndLyricAnimator.end();
+        }
+        SwitchDiscAndLyricAnimator = ValueAnimator.ofFloat(0,1);
+        SwitchDiscAndLyricAnimator.setDuration(200);
+        SwitchDiscAndLyricAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener()
         {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator)
@@ -373,7 +377,7 @@ public class DiscView extends RelativeLayout
                 show.setAlpha(curr);
             }
         });
-        va.addListener(new AnimatorListenerAdapter()
+        SwitchDiscAndLyricAnimator.addListener(new AnimatorListenerAdapter()
         {
             @Override
             public void onAnimationEnd(Animator animation)
@@ -388,25 +392,21 @@ public class DiscView extends RelativeLayout
                 super.onAnimationStart(animation);
                 dim.setVisibility(VISIBLE);
                 show.setVisibility(VISIBLE);
+
                 dim.setAlpha(1f);
                 show.setAlpha(0);
             }
         });
-        va.start();
+        SwitchDiscAndLyricAnimator.start();
     }
 
 
     @Override
-    public boolean onInterceptTouchEvent(MotionEvent ev)
+    public boolean onTouchEvent(MotionEvent event)
     {
-        if(ev.getAction() == MotionEvent.ACTION_UP && ev.getAction() != MotionEvent.ACTION_SCROLL)
-        {
-            if(IsShowLyric)
-                SwitchToDiscView();
-            else SwitchToLyricView();
-            IsShowLyric = !IsShowLyric;
-        }
-        return false;
+
+
+        return true;
     }
 
     private int Dp2Px(int dp) {
