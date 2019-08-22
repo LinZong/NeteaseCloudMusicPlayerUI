@@ -3,6 +3,7 @@ package nemesiss.com.lyricscroller.LyricParser.View;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -273,7 +274,7 @@ public class DiscView extends RelativeLayout
         MeasureFirstLyricPaddingTop();
     }
 
-    public void OnPlayerTimeChanged(int CurrentTimeStamp)
+    public void OnPlayerTimeChanged(int CurrentTimeStamp, Activity HolderActivity)
     {
         int curr = CurrentTimeStamp;
         int shouldRender = GetCurrentLyricPosition(curr, CurrentTimeStamp, lyricInfo.getSentences().size());
@@ -282,14 +283,24 @@ public class DiscView extends RelativeLayout
             return;
         } else if (shouldRender == -1)
         {
-            ClearAllHighlight();
+//            ClearAllHighlight();
 
             shouldRender = GetCurrentLyricPosition(curr, 0, lyricInfo.getSentences().size());
 
             int fsr = shouldRender;
             if (CurrentLyricSentenceIndex != fsr)
             {
-                ChangeSentenceColor(fsr, true);
+
+                if(HolderActivity != null) {
+                    HolderActivity.runOnUiThread(() ->  {
+                        ClearAllHighlight();
+                        ChangeSentenceColor(fsr, true);
+                    });
+                }
+                else {
+                    ClearAllHighlight();
+                    ChangeSentenceColor(fsr, true);
+                }
             }
 
             CurrentLyricSentenceIndex = shouldRender;
@@ -299,8 +310,16 @@ public class DiscView extends RelativeLayout
             int fsr1 = shouldRender;
             if (CurrentLyricSentenceIndex != fsr1)
             {
-                ClearAllHighlight();
-                ChangeSentenceColor(fsr1, true);
+                if(HolderActivity != null) {
+                    HolderActivity.runOnUiThread(() ->  {
+                        ClearAllHighlight();
+                        ChangeSentenceColor(fsr1, true);
+                    });
+                }
+                else {
+                    ClearAllHighlight();
+                    ChangeSentenceColor(fsr1, true);
+                }
             }
             CurrentLyricSentenceIndex = shouldRender;
         }

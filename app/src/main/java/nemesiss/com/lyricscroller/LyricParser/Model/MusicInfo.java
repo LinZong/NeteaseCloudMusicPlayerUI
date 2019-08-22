@@ -13,4 +13,5 @@ public class MusicInfo
     private String ArtistName;
     private String AlbumPhoto;
     private LyricInfo Lyrics;
+    private String MusicFileName;
 }

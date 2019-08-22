@@ -36,7 +36,7 @@
 
     <nemesiss.com.lyricscroller.LyricParser.View.MusicDiscPager android:layout_width="match_parent"
                                        android:layout_height="match_parent"
-                                       android:layout_above="@id/seekbar_container"
+                                       android:layout_above="@id/llOperation"
                                        android:layout_below="@id/toolBar"
                                        android:id="@+id/music_list_pager"/>
 
@@ -50,7 +50,7 @@
                                                  android:layout_height="48dp"
                                                  android:layout_marginBottom="12dp"
                                                  android:id="@+id/llOperation"
-                                                 android:layout_above="@id/llPlayOption">
+                                                 android:layout_above="@id/seekbar_container">
         <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/like"
                    android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"
                    android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent" android:id="@+id/imageView2"
@@ -77,14 +77,14 @@
     <RelativeLayout android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:id="@+id/seekbar_container"
-                    android:layout_marginBottom="10dp"
-                    android:layout_above="@id/llOperation">
+                    android:layout_marginBottom="24dp"
+                    android:layout_above="@id/llPlayOption">
 
         <TextView style="@style/netease_music_time_text_sytle"
                   android:id="@+id/seekbar_currTime"
                   android:layout_alignParentStart="true"
                   android:layout_centerVertical="true"
-                  android:text="03:27"
+                  android:text="00:00"
                   android:layout_marginStart="12dp"
                   />
 
@@ -92,7 +92,7 @@
                  android:layout_toEndOf="@id/seekbar_currTime"
                  android:layout_toStartOf="@id/seekbar_TotalTime"
                  android:layout_height="wrap_content"
-                 android:progress="20"
+                 android:progress="0"
                  android:id="@+id/disc_seekbar"
                  style="@style/netease_music_time_seek_bar_sytle"
                  android:layout_centerVertical="true"
@@ -102,7 +102,7 @@
                   android:layout_alignParentEnd="true"
                   android:layout_centerVertical="true"
                   android:id="@+id/seekbar_TotalTime"
-                  android:text="09:27"
+                  android:text="00:00"
                   android:layout_marginEnd="12dp"
         />
     </RelativeLayout>
