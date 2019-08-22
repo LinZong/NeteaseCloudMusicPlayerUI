@@ -488,13 +488,18 @@ public class PlayerActivity extends AppCompatActivity
         InitSeekTimer();
         CurrentActiveDiscView = MusicDiscViews.get(position);
 
+        // 记住当前Disc/Lyric翻转状态
         if(CurrentShowDisc) {
             CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.VISIBLE);
+            CurrentActiveDiscView.DiscNeedleContainer.setAlpha(1f);
             CurrentActiveDiscView.LyricContainer.setVisibility(View.INVISIBLE);
+            CurrentActiveDiscView.LyricContainer.setAlpha(0f);
         }
         else {
             CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.GONE);
+            CurrentActiveDiscView.DiscNeedleContainer.setAlpha(0f);
             CurrentActiveDiscView.LyricContainer.setVisibility(View.VISIBLE);
+            CurrentActiveDiscView.LyricContainer.setAlpha(1f);
         }
 
         OnMusicInfoChanged(MusicInfoList.get(position));
