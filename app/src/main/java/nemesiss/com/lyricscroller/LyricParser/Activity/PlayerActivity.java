@@ -100,7 +100,7 @@ public class PlayerActivity extends AppCompatActivity
     private List<ObjectAnimator> DiscAnimators;
     private DiscView CurrentActiveDiscView;
     private int CurrentPlayMusicDuration = 0;
-
+    private boolean CurrentShowDisc = true;
     //  Needle动画控制
 
     private ObjectAnimator NeedleAnimator;
@@ -130,14 +130,13 @@ public class PlayerActivity extends AppCompatActivity
             @Override
             public void update(int CurrentTimeStamp)
             {
-                if(!IsSeeking) {
-                    runOnUiThread(() -> {
-                        int duration = CurrentPlayMusicDuration == 0 ? 0 : 100 * CurrentTimeStamp / MusicPlayer.getInnerPlayer().getDuration();
-                        CurrentTime.setText(Duration2Time(CurrentTimeStamp));
-                        DiscSeekbar.setProgress(duration);
-                    });
+                if (!IsSeeking)
+                {
+                    int duration = CurrentPlayMusicDuration == 0 ? 0 : 100 * CurrentTimeStamp / MusicPlayer.getInnerPlayer().getDuration();
+                    CurrentTime.setText(Duration2Time(CurrentTimeStamp));
+                    DiscSeekbar.setProgress(duration);
                 }
-                CurrentActiveDiscView.OnPlayerTimeChanged(CurrentTimeStamp, PlayerActivity.this);
+                CurrentActiveDiscView.OnPlayerTimeChanged(CurrentTimeStamp);
             }
         });
         MusicPlayStatus = MusicPlayer.getMusicPlayStatus();
@@ -181,7 +180,9 @@ public class PlayerActivity extends AppCompatActivity
             @Override
             public void onCompletion(MediaPlayer mediaPlayer)
             {
+
                 DiscSeekbar.setProgress(0);
+                ResetDiscRotation(MusicPlaylistPager.getCurrentItem());
                 // 判断模式: 现在默认还是直接下一首:
                 Next();
             }
@@ -486,8 +487,18 @@ public class PlayerActivity extends AppCompatActivity
     {
         InitSeekTimer();
         CurrentActiveDiscView = MusicDiscViews.get(position);
+
+        if(CurrentShowDisc) {
+            CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.VISIBLE);
+            CurrentActiveDiscView.LyricContainer.setVisibility(View.INVISIBLE);
+        }
+        else {
+            CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.GONE);
+            CurrentActiveDiscView.LyricContainer.setVisibility(View.VISIBLE);
+        }
+
         OnMusicInfoChanged(MusicInfoList.get(position));
-        ResetDiscRotation(position);
+        ResetAllDiscRotation(position);
         OnPlayerBackgroundChanged(MusicInfoList.get(position).getAlbumPhoto());
     }
 
@@ -588,12 +599,14 @@ public class PlayerActivity extends AppCompatActivity
 
     private void SwitchLyricToDisc(View view)
     {
+        CurrentShowDisc = true;
         MusicPlaylistPager.setCanScroll(true);
         AnimateNeedleHideOrShow(true);
     }
 
     private void SwitchDiscToLyric(View view)
     {
+        CurrentShowDisc = false;
         MusicPlaylistPager.setCanScroll(false);
         AnimateNeedleHideOrShow(false);
     }
@@ -617,20 +630,26 @@ public class PlayerActivity extends AppCompatActivity
 
     // ================= 播放相关控制 ===================
 
-    private void ResetDiscRotation(int skip)
+    private void ResetAllDiscRotation(int skip)
     {
         for (int i = 0; i < MusicInfoList.size(); i++)
         {
             if (i == skip) continue;
-            ObjectAnimator oa = DiscAnimators.get(i);
-            oa.pause();
-            oa.end();
-
-            DiscView dv = MusicDiscViews.get(i);
-            dv.MeasureFirstLyricPaddingTop();
-            ImageView discImage = dv.findViewById(R.id.disc_image);
-            discImage.setRotation(0);
+            ResetDiscRotation(i);
         }
+    }
+
+    private void ResetDiscRotation(int position)
+    {
+        ObjectAnimator oa = DiscAnimators.get(position);
+        oa.pause();
+        oa.end();
+
+
+        DiscView dv = MusicDiscViews.get(position);
+        dv.MeasureFirstLyricPaddingTop();
+        ImageView discImage = dv.findViewById(R.id.disc_image);
+        discImage.setRotation(0);
     }
 
     private void LoadMusicAlbumPhoto(String fileName, SimpleTarget<Bitmap> handler)
@@ -725,6 +744,7 @@ public class PlayerActivity extends AppCompatActivity
             PauseNeedleAnimation();
             PlayNeedleAnimation();
         }
+        else MusicPlayStatus.onNext(MusicStatus.STOP);
     }
 
     @OnClick(R.id.ivNext)
@@ -739,6 +759,8 @@ public class PlayerActivity extends AppCompatActivity
             PauseNeedleAnimation();
             PlayNeedleAnimation();
         }
+        else MusicPlayStatus.onNext(MusicStatus.STOP);
+
     }
 
     @OnClick(R.id.ivPlayOrPause)

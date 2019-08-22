@@ -146,21 +146,21 @@ public class DiscView extends RelativeLayout
         float scaleRatio = (float) mDiscImageWidth / cropInfo.getCroppedEdgeLength();
         Matrix scaleMatrix = new Matrix();
 
-        scaleMatrix.postScale(scaleRatio,scaleRatio);
+        scaleMatrix.postScale(scaleRatio, scaleRatio);
 
         Bitmap croppedAlbumBitmap = Bitmap.createBitmap(
                 AlbumPhotoBitmap,
                 cropInfo.getCropStartX(),
                 cropInfo.getCropStartY(),
                 cropInfo.getCroppedEdgeLength(),
-                cropInfo.getCroppedEdgeLength(),scaleMatrix,false);
+                cropInfo.getCroppedEdgeLength(), scaleMatrix, false);
 
 
-        RoundedBitmapDrawable RoundedAlbumBitmap = RoundedBitmapDrawableFactory.create(getResources(),croppedAlbumBitmap);
+        RoundedBitmapDrawable RoundedAlbumBitmap = RoundedBitmapDrawableFactory.create(getResources(), croppedAlbumBitmap);
         RoundedAlbumBitmap.setAntiAlias(true);
         RoundedAlbumBitmap.setCornerRadius(croppedAlbumBitmap.getWidth());
 
-        Drawable[] layers = {RoundedAlbumBitmap,DiscBackgroundDrawable};
+        Drawable[] layers = {RoundedAlbumBitmap, DiscBackgroundDrawable};
         LayerDrawable layerDrawable = new LayerDrawable(layers);
 
         int musicPicMargin = (int) ((DisplayUtil.SCALE_DISC_SIZE - DisplayUtil
@@ -180,14 +180,13 @@ public class DiscView extends RelativeLayout
         RelativeLayout.LayoutParams layoutParams = (LayoutParams) DiscImage
                 .getLayoutParams();
 
-        int imageWH = (int) (mScreenWidth*((float)(804)/(1080)));
+        int imageWH = (int) (mScreenWidth * ((float) (804) / (1080)));
 
         layoutParams.setMargins(0, marginTop, 0, 0);
         layoutParams.width = imageWH;
         layoutParams.height = imageWH;
         DiscImage.setLayoutParams(layoutParams);
     }
-
 
 
     // =========================  Control Lyric View ======================================
@@ -197,7 +196,7 @@ public class DiscView extends RelativeLayout
         int recycleViewHeight = LyricScroller.getHeight();
         LyricRecyclerView.setPadding(0, recycleViewHeight / 2, 0, recycleViewHeight / 2);
         LyricRecyclerView.scrollToPosition(0);
-        ChangeSentenceColor(0,true);
+        ChangeSentenceColor(0, true);
     }
 
     public void MeasureFirstLyricPaddingTop()
@@ -205,7 +204,7 @@ public class DiscView extends RelativeLayout
         LyricScroller.post(this::ResetLyricView);
     }
 
-    private void ChangeSentenceColor(int position,boolean IsHighlight)
+    private void ChangeSentenceColor(int position, boolean IsHighlight)
     {
         RecyclerView.ViewHolder holder = LyricRecyclerView.findViewHolderForAdapterPosition(position);
         if (holder != null)
@@ -213,7 +212,7 @@ public class DiscView extends RelativeLayout
             TextView sentence = holder.itemView.findViewById(R.id.LyricRecycle_Sentence);
             sentence.setTextColor(IsHighlight ? Color.WHITE : Color.rgb(162, 162, 162));
 
-            if(IsHighlight)
+            if (IsHighlight)
                 ScrollToCenter(position, holder.itemView);
         }
     }
@@ -226,13 +225,13 @@ public class DiscView extends RelativeLayout
         BeginSmoothScroll(begin, totalHeight);
     }
 
-    private void BeginSmoothScroll(int begin,int end)
+    private void BeginSmoothScroll(int begin, int end)
     {
-        ValueAnimator va = ValueAnimator.ofInt(begin,end);
+        ValueAnimator va = ValueAnimator.ofInt(begin, end);
         va.setDuration(300);
         va.addUpdateListener(valueAnimator -> {
             int curr = (int) valueAnimator.getAnimatedValue();
-            LyricScroller.scrollTo(0,curr);
+            LyricScroller.scrollTo(0, curr);
         });
         va.start();
     }
@@ -242,29 +241,26 @@ public class DiscView extends RelativeLayout
         CurrentLyricSentenceIndex = 0;
 
         Log.d(TAG, "InitLyrics's thread " + Thread.currentThread().getId());
-        if(lyricInfo != null)
+        if (lyricInfo != null)
         {
             this.lyricInfo = lyricInfo;
-        }
-        else
+        } else
         {
-            LyricSentence ls = new LyricSentence(0,"暂无歌词");
-            this.lyricInfo = new LyricInfo(null,Arrays.asList(ls));
+            LyricSentence ls = new LyricSentence(0, "暂无歌词");
+            this.lyricInfo = new LyricInfo(null, Arrays.asList(ls));
         }
 
-        if(LyricLayoutManager == null)
+        if (LyricLayoutManager == null)
         {
-            LyricLayoutManager = new LinearLayoutManager(getContext(),LinearLayoutManager.VERTICAL,false);
+            LyricLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
             LyricRecyclerView.setLayoutManager(LyricLayoutManager);
         }
 
-        if(LyricAdapter == null)
+        if (LyricAdapter == null)
         {
             LyricAdapter = new LyricRecycleAdapter(this.lyricInfo);
             LyricRecyclerView.setAdapter(LyricAdapter);
-        }
-
-        else
+        } else
         {
             LyricAdapter.set_lyricInfo(this.lyricInfo);
             LyricAdapter.notifyDataSetChanged();
@@ -274,7 +270,7 @@ public class DiscView extends RelativeLayout
         MeasureFirstLyricPaddingTop();
     }
 
-    public void OnPlayerTimeChanged(int CurrentTimeStamp, Activity HolderActivity)
+    public void OnPlayerTimeChanged(int CurrentTimeStamp)
     {
         int curr = CurrentTimeStamp;
         int shouldRender = GetCurrentLyricPosition(curr, CurrentTimeStamp, lyricInfo.getSentences().size());
@@ -291,16 +287,8 @@ public class DiscView extends RelativeLayout
             if (CurrentLyricSentenceIndex != fsr)
             {
 
-                if(HolderActivity != null) {
-                    HolderActivity.runOnUiThread(() ->  {
-                        ClearAllHighlight();
-                        ChangeSentenceColor(fsr, true);
-                    });
-                }
-                else {
-                    ClearAllHighlight();
-                    ChangeSentenceColor(fsr, true);
-                }
+                ClearAllHighlight();
+                ChangeSentenceColor(fsr, true);
             }
 
             CurrentLyricSentenceIndex = shouldRender;
@@ -310,16 +298,9 @@ public class DiscView extends RelativeLayout
             int fsr1 = shouldRender;
             if (CurrentLyricSentenceIndex != fsr1)
             {
-                if(HolderActivity != null) {
-                    HolderActivity.runOnUiThread(() ->  {
-                        ClearAllHighlight();
-                        ChangeSentenceColor(fsr1, true);
-                    });
-                }
-                else {
-                    ClearAllHighlight();
-                    ChangeSentenceColor(fsr1, true);
-                }
+
+                ClearAllHighlight();
+                ChangeSentenceColor(fsr1, true);
             }
             CurrentLyricSentenceIndex = shouldRender;
         }
@@ -330,14 +311,14 @@ public class DiscView extends RelativeLayout
         // 特判时间超了
         LyricSentence end = lyricInfo.getSentences().get(SentenceCount - 1);
         LyricSentence begin = lyricInfo.getSentences().get(0);
-        if(CurrentTime < begin.getMills()) return -2;// 告知此时仍然不需要渲染歌词
-        if(CurrentTime >= end.getMills()) return SentenceCount - 1; // 渲染最后一个
+        if (CurrentTime < begin.getMills()) return -2;// 告知此时仍然不需要渲染歌词
+        if (CurrentTime >= end.getMills()) return SentenceCount - 1; // 渲染最后一个
 
         for (int i = Begin; i < SentenceCount - 1; i++)
         {
             LyricSentence lsCurr = lyricInfo.getSentences().get(i);
-            LyricSentence lsNext = lyricInfo.getSentences().get(i+1);
-            if(lsCurr.getMills() <= CurrentTime && CurrentTime < lsNext.getMills())
+            LyricSentence lsNext = lyricInfo.getSentences().get(i + 1);
+            if (lsCurr.getMills() <= CurrentTime && CurrentTime < lsNext.getMills())
                 return i;
         }
         return -1;// 给定Begin找不到结果
@@ -347,7 +328,7 @@ public class DiscView extends RelativeLayout
     {
         for (int i = 0; i < lyricInfo.getSentences().size(); i++)
         {
-            ChangeSentenceColor(i,false);
+            ChangeSentenceColor(i, false);
         }
     }
 
@@ -356,25 +337,26 @@ public class DiscView extends RelativeLayout
     @OnClick({R.id.disc_needle_container})
     void SwitchToLyricView()
     {
-        if(DiscViewClickListener != null) DiscViewClickListener.onClick(this);
-        AnimateDiscAndLyricSwitch(DiscNeedleContainer,LyricContainer);
+        if (DiscViewClickListener != null) DiscViewClickListener.onClick(this);
+        AnimateDiscAndLyricSwitch(DiscNeedleContainer, LyricContainer);
     }
-    @OnClick({R.id.disc_lyric_container,R.id.disc_lyric_scroller,R.id.disc_lyric})
+
+    @OnClick({R.id.disc_lyric_container, R.id.disc_lyric_scroller, R.id.disc_lyric})
     void SwitchToDiscView()
     {
-        if(LyricViewClickListener != null) LyricViewClickListener.onClick(this);
-        AnimateDiscAndLyricSwitch(LyricContainer,DiscNeedleContainer);
+        if (LyricViewClickListener != null) LyricViewClickListener.onClick(this);
+        AnimateDiscAndLyricSwitch(LyricContainer, DiscNeedleContainer);
     }
 
 
     private void AnimateDiscAndLyricSwitch(View dim, View show)
     {
 
-        if(SwitchDiscAndLyricAnimator != null)
+        if (SwitchDiscAndLyricAnimator != null)
         {
             SwitchDiscAndLyricAnimator.end();
         }
-        SwitchDiscAndLyricAnimator = ValueAnimator.ofFloat(0,1);
+        SwitchDiscAndLyricAnimator = ValueAnimator.ofFloat(0, 1);
         SwitchDiscAndLyricAnimator.setDuration(200);
         SwitchDiscAndLyricAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener()
         {
@@ -410,9 +392,8 @@ public class DiscView extends RelativeLayout
     }
 
 
-
-
-    private int Dp2Px(int dp) {
+    private int Dp2Px(int dp)
+    {
         final float scale = getResources().getDisplayMetrics().density;
         return (int) (dp * scale + 0.5f);
     }
