@@ -747,7 +747,7 @@ public class PlayerActivity extends AppCompatActivity
         {
             MusicPlaylistPager.setCurrentItem(curr - 1, true);
             PauseNeedleAnimation();
-            PlayNeedleAnimation();
+            if(MusicPlayStatus.getValue() == MusicStatus.PLAY) PlayNeedleAnimation();
         }
         else MusicPlayStatus.onNext(MusicStatus.STOP);
     }
@@ -762,7 +762,7 @@ public class PlayerActivity extends AppCompatActivity
         {
             MusicPlaylistPager.setCurrentItem(curr + 1, true);
             PauseNeedleAnimation();
-            PlayNeedleAnimation();
+            if(MusicPlayStatus.getValue() == MusicStatus.PLAY) PlayNeedleAnimation();
         }
         else MusicPlayStatus.onNext(MusicStatus.STOP);
 
