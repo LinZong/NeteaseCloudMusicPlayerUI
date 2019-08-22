@@ -199,7 +199,7 @@ public class DiscView extends RelativeLayout
         ChangeSentenceColor(0,true);
     }
 
-    private void MeasureFirstLyricPaddingTop()
+    public void MeasureFirstLyricPaddingTop()
     {
         LyricScroller.post(this::ResetLyricView);
     }

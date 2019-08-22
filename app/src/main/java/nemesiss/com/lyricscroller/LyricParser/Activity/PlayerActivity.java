@@ -1,6 +1,9 @@
 package nemesiss.com.lyricscroller.LyricParser.Activity;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -11,20 +14,24 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
-import android.support.v7.widget.Toolbar;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import nemesiss.com.lyricscroller.LyricParser.Adapter.MusicDiscPagerAdapter;
 import nemesiss.com.lyricscroller.LyricParser.LyricParserImpl;
 import nemesiss.com.lyricscroller.LyricParser.Model.BitmapRectCropInfo;
@@ -32,9 +39,7 @@ import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
 import nemesiss.com.lyricscroller.LyricParser.Model.MusicInfo;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
 import nemesiss.com.lyricscroller.LyricParser.Utils.FastBlurUtil;
-import nemesiss.com.lyricscroller.LyricParser.View.DiscView;
-import nemesiss.com.lyricscroller.LyricParser.View.MusicDiscPager;
-import nemesiss.com.lyricscroller.LyricParser.View.PlayerRootView;
+import nemesiss.com.lyricscroller.LyricParser.View.*;
 import nemesiss.com.lyricscroller.R;
 
 import java.io.*;
@@ -54,7 +59,6 @@ public class PlayerActivity extends AppCompatActivity
     @BindView(R.id.disc_seekbar)
     SeekBar DiscSeekbar;
 
-
     @BindView(R.id.llNeedle)
     ImageView NeedleIv;
 
@@ -64,6 +68,9 @@ public class PlayerActivity extends AppCompatActivity
     @BindView(R.id.music_list_pager)
     MusicDiscPager MusicPlaylistPager;
 
+    @BindView(R.id.ivPlayOrPause)
+    ImageView PlayOrPauseButton;
+
     MusicDiscPagerAdapter musicDiscPagerAdapter;
 
     private static final String DefaultBackgroundImage = "74746927_p0.png";
@@ -72,11 +79,18 @@ public class PlayerActivity extends AppCompatActivity
     private LyricInfo FakeLyricInfo;
     private List<MusicInfo> MusicInfoList;
     private List<DiscView> MusicDiscViews;
+    private List<ObjectAnimator> DiscAnimators;
 
 
     //  Needle动画控制
 
     private ObjectAnimator NeedleAnimator;
+    private boolean ContinuePlayNextNeedleAnimation = false;
+    private DiscNeedleStatus needleStatus = DiscNeedleStatus.FAR_DISC;
+    private boolean IsMovingDisc = false;
+
+    // 音乐播放控制
+    private BehaviorSubject<MusicStatus> MusicPlayStatus = BehaviorSubject.createDefault(MusicStatus.STOP);
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -85,24 +99,117 @@ public class PlayerActivity extends AppCompatActivity
         setContentView(R.layout.activity_player);
         ButterKnife.bind(this);
         NeedleIv.post(this::InitNeedle);
-
+        InitNeedleAnimator();
         LoadLyric();
         InitScreenResolution();
-        makeStatusBarTransparent();
+        MakeStatusBarTransparent();
         InitSeekbar();
         InitMusicPager();
         LoadMusicPages();
-//        LoadDiscImage();
-//        LoadLyric();
 
+        MusicPlayStatus.subscribe((status) -> {
+            switch (status) {
+                case PLAY:
+                    PlayOrPauseButton.setImageResource(R.drawable.pause);
+                    break;
+                case PAUSE:
+                case STOP:
+                    PlayOrPauseButton.setImageResource(R.drawable.play);
+                    break;
+            }
+        });
     }
 
     private void InitNeedleAnimator()
     {
-
-
         NeedleAnimator = ObjectAnimator.ofFloat(NeedleIv,View.ROTATION,-25,0);
+        NeedleAnimator.setDuration(500);
+        NeedleAnimator.setInterpolator(new AccelerateInterpolator());
+        NeedleAnimator.addListener(new AnimatorListenerAdapter()
+        {
+            @Override
+            public void onAnimationEnd(Animator animation)
+            {
+                if(needleStatus == DiscNeedleStatus.TO_DISC) {
+                    needleStatus = DiscNeedleStatus.IN_DISC;
+                    PlayDiscAnimation(MusicPlaylistPager.getCurrentItem());
+                }
+                else if(needleStatus == DiscNeedleStatus.LEAVE_DISC) {
+                    needleStatus = DiscNeedleStatus.FAR_DISC;
+                }
+
+                // 在这里判断是否需要马上返回
+
+                if(ContinuePlayNextNeedleAnimation) {
+                    ContinuePlayNextNeedleAnimation = false;
+                    PlayNeedleAnimation();
+                }
+            }
+
+            @Override
+            public void onAnimationStart(Animator animation)
+            {
+                // 简单的设置状态
+                if(needleStatus == DiscNeedleStatus.FAR_DISC) {
+                    needleStatus = DiscNeedleStatus.TO_DISC;
+                }
+                else if(needleStatus == DiscNeedleStatus.IN_DISC) {
+                    needleStatus = DiscNeedleStatus.LEAVE_DISC;
+                }
+            }
+        });
     }
+
+
+
+    private void PlayDiscAnimation(int position)
+    {
+        ObjectAnimator oa = DiscAnimators.get(position);
+        if(oa.isPaused())
+            oa.resume();
+        else
+            oa.start();
+
+        // 如果音乐没有播放，可以通知播放。
+        // MusicStatus = PLAY
+    }
+
+    private void PauseDiscAnimation(int position)
+    {
+        DiscAnimators.get(position).pause();
+    }
+
+    private void PlayNeedleAnimation()
+    {
+        if(needleStatus == DiscNeedleStatus.FAR_DISC)
+        {
+            NeedleAnimator.start();
+            // 它会AnimationEnd的时候自动触发Disc的Animation.
+        }
+        else if(needleStatus == DiscNeedleStatus.LEAVE_DISC)
+        {
+            // 告知它到头之后马上回来
+            ContinuePlayNextNeedleAnimation = true;
+        }
+    }
+    private void PauseNeedleAnimation()
+    {
+        if(needleStatus == DiscNeedleStatus.IN_DISC) {
+            // 针在碟上，移开针，暂停碟片动画
+            int curr = MusicPlaylistPager.getCurrentItem();
+            PauseDiscAnimation(curr);
+            NeedleAnimator.reverse();
+        }
+        else if(needleStatus == DiscNeedleStatus.TO_DISC) {
+            // 正在前往碟片，马上移开
+            NeedleAnimator.reverse();
+            /**
+             * 若动画在没结束时执行reverse方法，则不会执行监听器的onStart方法，此时需要手动设置
+             * */
+            needleStatus = DiscNeedleStatus.LEAVE_DISC;
+        }
+    }
+
 
     private void InitNeedle()
     {
@@ -121,12 +228,13 @@ public class PlayerActivity extends AppCompatActivity
 
         NeedleIv.setPivotX(pivotX);
         NeedleIv.setPivotY(pivotY);
-        NeedleIv.setRotation(0);
+        NeedleIv.setRotation(-25);
     }
 
     private void LoadMusicPages()
     {
         List<DiscView> dvs = new ArrayList<>();
+        DiscAnimators = new ArrayList<>();
 
         // 准备一个假的播放列表
         MusicInfoList = new ArrayList<>();
@@ -141,6 +249,8 @@ public class PlayerActivity extends AppCompatActivity
 
             DiscView dv = (DiscView) LayoutInflater.from(PlayerActivity.this)
                     .inflate(R.layout.layout_single_discview, MusicPlaylistPager, false);
+
+            ImageView discIv = dv.findViewById(R.id.disc_image);
 
             dv.InitLyrics(MusicInfoList.get(i).getLyrics());
 
@@ -159,7 +269,9 @@ public class PlayerActivity extends AppCompatActivity
             });
 
             if(i == 0) OnPlayerBackgroundChanged(MusicInfoList.get(i).getAlbumPhoto());
+
             dvs.add(dv);
+            DiscAnimators.add(GetDiscAnimator(discIv));
         }
         MusicDiscViews = dvs;
 
@@ -188,20 +300,25 @@ public class PlayerActivity extends AppCompatActivity
 
     private void InitMusicPager()
     {
+
         // 属性设置
         MusicPlaylistPager.setOverScrollMode(View.OVER_SCROLL_NEVER);
         MusicPlaylistPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener()
         {
             int lastPositionOffsetPixels = 0;
             int currentItem = 0;
-
+            int direction = 0;
             @Override
             public void onPageScrolled(int position,
                                        float positionOffset,
                                        int positionOffsetPixels)
             {
+                // positionOffsetPixels < lastPositionOffsetPixels 认为是上一首
+                // positionOffsetPixels > lastPositionOffsetPixels  下一首
                 if (lastPositionOffsetPixels > positionOffsetPixels)
                 {
+                    // 上一首
+                    direction = 0;
                     if (positionOffset < 0.5)
                     {
                         OnMusicInfoChanged(MusicInfoList.get(position));
@@ -213,6 +330,8 @@ public class PlayerActivity extends AppCompatActivity
                 //右滑
                 else if (lastPositionOffsetPixels < positionOffsetPixels)
                 {
+                    // 下一首
+                    direction = 1;
                     if (positionOffset > 0.5)
                     {
                         OnMusicInfoChanged(MusicInfoList.get(position + 1));
@@ -227,7 +346,7 @@ public class PlayerActivity extends AppCompatActivity
             @Override
             public void onPageSelected(int position)
             {
-                // resetOtherDiscAnimation(position);
+                ResetDiscRotation(position);
                 OnPlayerBackgroundChanged(MusicInfoList.get(position).getAlbumPhoto());
                 if (position > currentItem)
                 {
@@ -248,14 +367,20 @@ public class PlayerActivity extends AppCompatActivity
                 switch (state)
                 {
                     case ViewPager.SCROLL_STATE_IDLE:
+                        IsMovingDisc = false;
+                        if(MusicPlayStatus.getValue() == MusicStatus.PLAY) {
+                            PlayNeedleAnimation();
+                        }
+                        break;
                     case ViewPager.SCROLL_STATE_SETTLING:
                     {
-
                         break;
                     }
                     case ViewPager.SCROLL_STATE_DRAGGING:
                     {
-
+                        IsMovingDisc = true;
+                        Log.d("DiscView","Direction :"+ direction + "  " +  MusicPlaylistPager.getCurrentItem());
+                        PauseNeedleAnimation();
                         break;
                     }
                 }
@@ -270,7 +395,7 @@ public class PlayerActivity extends AppCompatActivity
         DisplayWHRatio = (float) mScreenWidth / mScreenHeight;
     }
 
-    private void makeStatusBarTransparent()
+    private void MakeStatusBarTransparent()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
@@ -291,6 +416,21 @@ public class PlayerActivity extends AppCompatActivity
         DiscSeekbar.setProgressTintList(ColorStateList.valueOf(Color.RED));
     }
 
+    private void ResetDiscRotation(int skip)
+    {
+        for (int i = 0; i < MusicInfoList.size(); i++)
+        {
+            if(i == skip) continue;
+            ObjectAnimator oa = DiscAnimators.get(i);
+            oa.pause();
+            oa.end();
+
+            DiscView dv = MusicDiscViews.get(i);
+            dv.MeasureFirstLyricPaddingTop();
+            ImageView discImage = dv.findViewById(R.id.disc_image);
+            discImage.setRotation(0);
+        }
+    }
 
     private void LoadMusicAlbumPhoto(String fileName, SimpleTarget<Bitmap> handler)
     {
@@ -312,9 +452,13 @@ public class PlayerActivity extends AppCompatActivity
         }
     }
 
-    private void AnimateNeedleRotation()
+    private ObjectAnimator GetDiscAnimator(ImageView dv)
     {
-
+        ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(dv, View.ROTATION, 0, 360);
+        objectAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        objectAnimator.setDuration(20 * 1000);
+        objectAnimator.setInterpolator(new LinearInterpolator());
+        return objectAnimator;
     }
 
     private void AnimateNeedleHideOrShow(boolean IsShows)
@@ -391,4 +535,64 @@ public class PlayerActivity extends AppCompatActivity
         });
     }
 
+    // =============== 绑定按钮点击事件 ==================
+
+
+    public void Play()
+    {
+        MusicPlayStatus.onNext(MusicStatus.PLAY);
+        PlayNeedleAnimation();
+    }
+
+    public void Pause()
+    {
+        MusicPlayStatus.onNext(MusicStatus.PAUSE);
+        PauseNeedleAnimation();
+    }
+
+    @OnClick(R.id.ivLast)
+    public void Last()
+    {
+        int last = MusicInfoList.size() - 1;
+        int curr = MusicPlaylistPager.getCurrentItem();
+
+        if(0 < curr && curr <= last)
+        {
+            MusicPlaylistPager.setCurrentItem(curr - 1,true);
+            PauseNeedleAnimation();
+            PlayNeedleAnimation();
+        }
+    }
+
+    @OnClick(R.id.ivNext)
+    public void Next()
+    {
+        int last = MusicInfoList.size() - 1;
+        int curr = MusicPlaylistPager.getCurrentItem();
+
+        if(0 <= curr && curr < last)
+        {
+            MusicPlaylistPager.setCurrentItem(curr + 1,true);
+            PauseNeedleAnimation();
+            PlayNeedleAnimation();
+        }
+    }
+
+
+    @OnClick(R.id.ivPlayOrPause)
+    void TogglePlayOrPause()
+    {
+        MusicStatus currStatus = MusicPlayStatus.getValue();
+        switch (currStatus)
+        {
+
+            case PLAY:
+                Pause();
+                break;
+            case PAUSE:
+            case STOP:
+                Play();
+                break;
+        }
+    }
 }
