@@ -4,7 +4,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.graphics.BitmapFactory;
-import android.widget.ImageView;
 import nemesiss.com.lyricscroller.LyricParser.Model.MusicInfo;
 import nemesiss.com.lyricscroller.R;
 

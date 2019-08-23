@@ -215,7 +215,7 @@ public abstract class PlayerActivity extends AppCompatActivity
             public void onCompletion(MediaPlayer mediaPlayer)
             {
                 DiscSeekbar.setProgress(0);
-                ResetDiscRotation(MusicPlaylistPager.getCurrentItem());
+//                ResetDiscRotation(MusicPlaylistPager.getCurrentItem());
                 switch (LoopMode.getValue())
                 {
 

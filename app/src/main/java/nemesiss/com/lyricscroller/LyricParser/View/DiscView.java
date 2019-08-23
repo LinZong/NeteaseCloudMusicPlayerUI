@@ -75,7 +75,6 @@ public class DiscView extends RelativeLayout
     private ValueAnimator SwitchDiscAndLyricAnimator;
     private LinearLayoutManager LyricLayoutManager;
     private LyricRecycleAdapter LyricAdapter;
-    private boolean IsShowLyric = false;
 
     // 歌词逐句显示控制
 
@@ -180,6 +179,7 @@ public class DiscView extends RelativeLayout
         RelativeLayout.LayoutParams layoutParams = (LayoutParams) DiscImage
                 .getLayoutParams();
 
+        // 定死唱盘图片的宽高, 不受专辑图叠加后的影响。
         int imageWH = (int) (mScreenWidth * ((float) (804) / (1080)));
 
         layoutParams.setMargins(0, marginTop, 0, 0);
@@ -193,6 +193,7 @@ public class DiscView extends RelativeLayout
 
     private void ResetLyricView()
     {
+        // 滚回到第一句
         int recycleViewHeight = LyricScroller.getHeight();
         LyricRecyclerView.setPadding(0, recycleViewHeight / 2, 0, recycleViewHeight / 2);
         LyricRecyclerView.scrollToPosition(0);
