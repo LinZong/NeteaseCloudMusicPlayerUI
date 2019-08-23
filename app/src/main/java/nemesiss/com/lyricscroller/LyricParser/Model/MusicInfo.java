@@ -14,4 +14,5 @@ public class MusicInfo
     private String AlbumPhoto;
     private LyricInfo Lyrics;
     private String MusicFileName;
+    private boolean LikeMusic;
 }
