@@ -1,4 +1,4 @@
-package nemesiss.com.lyricscroller.LyricParser.View;
+package nemesiss.com.lyricscroller.LyricParser.Model;
 
 public enum DiscNeedleStatus
 {

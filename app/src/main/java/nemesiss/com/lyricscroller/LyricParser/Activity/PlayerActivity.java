@@ -39,17 +39,20 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import nemesiss.com.lyricscroller.LyricParser.Adapter.MusicDiscPagerAdapter;
 import nemesiss.com.lyricscroller.LyricParser.LyricParserImpl;
-import nemesiss.com.lyricscroller.LyricParser.Model.BitmapRectCropInfo;
-import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
-import nemesiss.com.lyricscroller.LyricParser.Model.MusicInfo;
+import nemesiss.com.lyricscroller.LyricParser.Model.*;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
 import nemesiss.com.lyricscroller.LyricParser.Utils.FastBlurUtil;
-import nemesiss.com.lyricscroller.LyricParser.View.*;
+import nemesiss.com.lyricscroller.LyricParser.View.DiscView;
+import nemesiss.com.lyricscroller.LyricParser.View.MusicDiscPager;
+import nemesiss.com.lyricscroller.LyricParser.View.MusicStatus;
+import nemesiss.com.lyricscroller.LyricParser.View.PlayerRootView;
 import nemesiss.com.lyricscroller.R;
 import nemesiss.com.lyricscroller.SimpleMusicPlayer;
 
 import java.io.*;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class PlayerActivity extends AppCompatActivity
@@ -83,6 +86,9 @@ public class PlayerActivity extends AppCompatActivity
     @BindView(R.id.seekbar_TotalTime)
     TextView TotalTime;
 
+    @BindView(R.id.ivLoop)
+    ImageView LoopModeIv;
+
 
     MusicDiscPagerAdapter musicDiscPagerAdapter;
 
@@ -101,6 +107,9 @@ public class PlayerActivity extends AppCompatActivity
     private DiscView CurrentActiveDiscView;
     private int CurrentPlayMusicDuration = 0;
     private boolean CurrentShowDisc = true;
+    private BehaviorSubject<PlayerLoopMode> LoopMode = BehaviorSubject.createDefault(PlayerLoopMode.LOOP_PLAY_LIST);
+
+
     //  Needle动画控制
 
     private ObjectAnimator NeedleAnimator;
@@ -136,6 +145,7 @@ public class PlayerActivity extends AppCompatActivity
                     CurrentTime.setText(Duration2Time(CurrentTimeStamp));
                     DiscSeekbar.setProgress(duration);
                 }
+                // 歌词跟随
                 CurrentActiveDiscView.OnPlayerTimeChanged(CurrentTimeStamp);
             }
         });
@@ -151,6 +161,7 @@ public class PlayerActivity extends AppCompatActivity
                         TotalTime.setText(Duration2Time(CurrentPlayMusicDuration));
                     }
                 });
+
 
         NeedleIv.post(this::InitNeedle);
         InitNeedleAnimator();
@@ -174,17 +185,45 @@ public class PlayerActivity extends AppCompatActivity
             }
         });
 
+        LoopMode.subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe((loop) -> {
+                   switch (loop) {
+                       case LOOP_PLAY_LIST:
+                           LoopModeIv.setImageResource(R.drawable.looplist);
+                           break;
+                       case LOOP_SINGLE:
+                           LoopModeIv.setImageResource(R.drawable.loopsingle);
+                           break;
+                       case RANDOM:
+                           LoopModeIv.setImageResource(R.drawable.random);
+                           break;
+                   }
+                });
 
+        // 播完后行为
         MusicPlayer.getInnerPlayer().setOnCompletionListener(new MediaPlayer.OnCompletionListener()
         {
             @Override
             public void onCompletion(MediaPlayer mediaPlayer)
             {
-
                 DiscSeekbar.setProgress(0);
                 ResetDiscRotation(MusicPlaylistPager.getCurrentItem());
-                // 判断模式: 现在默认还是直接下一首:
-                Next();
+                switch (LoopMode.getValue()) {
+
+                    case LOOP_PLAY_LIST:
+                        // 判断模式: 现在默认还是直接下一首:
+                        Next();
+                        break;
+                    case LOOP_SINGLE:
+                        Play();
+                        // 无需处理
+                        break;
+                    case RANDOM:
+                        SecureRandom sr = new SecureRandom();
+                        int next = sr.nextInt(MusicInfoList.size());
+                        PreparePlayMusic(next);
+                        break;
+                }
             }
         });
 
@@ -196,6 +235,19 @@ public class PlayerActivity extends AppCompatActivity
     }
 
     // ================= 外来文件加载 ======================
+
+    // 仅作为测试用, 从Asset加载Music
+    private void LoadMusicFromAssets(int position)
+    {
+        try
+        {
+            AssetFileDescriptor afd = getAssets().openFd(MusicInfoList.get(position).getMusicFileName());
+            MusicPlayer.LoadMusic(afd);
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
 
     private void LoadMusicPages()
     {
@@ -249,15 +301,7 @@ public class PlayerActivity extends AppCompatActivity
             musicDiscPagerAdapter.notifyDataSetChanged();
         }
 
-        BeginPlayMusic(0);
-        try
-        {
-            AssetFileDescriptor afd = getAssets().openFd(MusicInfoList.get(0).getMusicFileName());
-            MusicPlayer.LoadMusic(afd);
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+        PreparePlayMusic(0);
     }
 
     private void LoadLyric()
@@ -370,15 +414,7 @@ public class PlayerActivity extends AppCompatActivity
             @Override
             public void onPageSelected(int position)
             {
-                BeginPlayMusic(position);
-                try
-                {
-                    AssetFileDescriptor afd = getAssets().openFd(MusicInfoList.get(position).getMusicFileName());
-                    MusicPlayer.LoadMusic(afd);
-                } catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
+                PreparePlayMusic(position);
 
                 if (position > currentItem)
                 {
@@ -452,7 +488,7 @@ public class PlayerActivity extends AppCompatActivity
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
             {
-                // Seeking Changes
+                // 跟随Seekbar的移动改变当前时间
                 if(fromUser) {
                     CurrentTime.setText(Duration2Time(Progress2Duration(progress, CurrentPlayMusicDuration)));
                 }
@@ -478,34 +514,12 @@ public class PlayerActivity extends AppCompatActivity
     }
 
     private void InitSeekTimer() {
+        // Seekbar以及两边的指示器归位
         CurrentTime.setText(Duration2Time(0));
         TotalTime.setText(Duration2Time(0));
         DiscSeekbar.setProgress(0);
     }
 
-    private void BeginPlayMusic(int position)
-    {
-        InitSeekTimer();
-        CurrentActiveDiscView = MusicDiscViews.get(position);
-
-        // 记住当前Disc/Lyric翻转状态
-        if(CurrentShowDisc) {
-            CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.VISIBLE);
-            CurrentActiveDiscView.DiscNeedleContainer.setAlpha(1f);
-            CurrentActiveDiscView.LyricContainer.setVisibility(View.INVISIBLE);
-            CurrentActiveDiscView.LyricContainer.setAlpha(0f);
-        }
-        else {
-            CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.GONE);
-            CurrentActiveDiscView.DiscNeedleContainer.setAlpha(0f);
-            CurrentActiveDiscView.LyricContainer.setVisibility(View.VISIBLE);
-            CurrentActiveDiscView.LyricContainer.setAlpha(1f);
-        }
-
-        OnMusicInfoChanged(MusicInfoList.get(position));
-        ResetAllDiscRotation(position);
-        OnPlayerBackgroundChanged(MusicInfoList.get(position).getAlbumPhoto());
-    }
 
     // ================= Animator控制 =================
 
@@ -695,6 +709,34 @@ public class PlayerActivity extends AppCompatActivity
         return backgroundDrawable;
     }
 
+    private void PreparePlayMusic(int position)
+    {
+        InitSeekTimer();
+        CurrentActiveDiscView = MusicDiscViews.get(position);
+
+        // 记住当前Disc/Lyric翻转状态
+        if(CurrentShowDisc) {
+            CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.VISIBLE);
+            CurrentActiveDiscView.DiscNeedleContainer.setAlpha(1f);
+            CurrentActiveDiscView.LyricContainer.setVisibility(View.INVISIBLE);
+            CurrentActiveDiscView.LyricContainer.setAlpha(0f);
+        }
+        else {
+            CurrentActiveDiscView.DiscNeedleContainer.setVisibility(View.GONE);
+            CurrentActiveDiscView.DiscNeedleContainer.setAlpha(0f);
+            CurrentActiveDiscView.LyricContainer.setVisibility(View.VISIBLE);
+            CurrentActiveDiscView.LyricContainer.setAlpha(1f);
+        }
+
+        OnMusicInfoChanged(MusicInfoList.get(position));
+
+
+        LoadMusicFromAssets(position);
+
+        ResetAllDiscRotation(position);
+        OnPlayerBackgroundChanged(MusicInfoList.get(position).getAlbumPhoto());
+
+    }
 
     // ================= 控制音乐信息更新 ====================
 
@@ -740,32 +782,29 @@ public class PlayerActivity extends AppCompatActivity
     @OnClick(R.id.ivLast)
     public void Last()
     {
-        int last = MusicInfoList.size() - 1;
-        int curr = MusicPlaylistPager.getCurrentItem();
-
-        if (0 < curr && curr <= last)
-        {
-            MusicPlaylistPager.setCurrentItem(curr - 1, true);
-            PauseNeedleAnimation();
-            if(MusicPlayStatus.getValue() == MusicStatus.PLAY) PlayNeedleAnimation();
-        }
-        else MusicPlayStatus.onNext(MusicStatus.STOP);
+        SelectMusic(-1);
     }
 
     @OnClick(R.id.ivNext)
     public void Next()
     {
+        SelectMusic(1);
+    }
+
+    private void SelectMusic(int offset)
+    {
         int last = MusicInfoList.size() - 1;
         int curr = MusicPlaylistPager.getCurrentItem();
 
-        if (0 <= curr && curr < last)
+        if (0 <= curr && curr <= last || LoopMode.getValue() == PlayerLoopMode.LOOP_PLAY_LIST)
         {
-            MusicPlaylistPager.setCurrentItem(curr + 1, true);
+            // 会触发OnPageSelected，在那里加载新的歌曲
+            MusicPlaylistPager.setCurrentItem((curr + offset + last + 1) % (last + 1), true);
+
             PauseNeedleAnimation();
             if(MusicPlayStatus.getValue() == MusicStatus.PLAY) PlayNeedleAnimation();
         }
         else MusicPlayStatus.onNext(MusicStatus.STOP);
-
     }
 
     @OnClick(R.id.ivPlayOrPause)
@@ -783,6 +822,20 @@ public class PlayerActivity extends AppCompatActivity
                 Play();
                 break;
         }
+    }
+
+    @OnClick(R.id.ivList)
+    void TogglePlayList()
+    {
+        // 可以通过修改这里的逻辑展示播放列表
+    }
+
+    @OnClick(R.id.ivLoop)
+    void SwitchLoopMode()
+    {
+        PlayerLoopMode loopMode = LoopMode.getValue();
+        PlayerLoopMode[] AllMode = PlayerLoopMode.values();
+        LoopMode.onNext(AllMode[((Arrays.asList(AllMode).indexOf(loopMode) + 1) % AllMode.length)]);
     }
 
     // ================ 帮助类 ===================

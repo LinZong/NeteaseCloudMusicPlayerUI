@@ -1,5 +1,6 @@
 package nemesiss.com.lyricscroller;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
@@ -39,10 +40,7 @@ public class SimpleMusicPlayer
             case 688: {
                 if(TimeElapsedHandler != null && MusicPlayStatus.getValue() == MusicStatus.PLAY && InnerPlayer.isPlaying()) {
                     TimeElapsedListener.update(message.arg1);
-                    Message msg = new Message();
-                    msg.what = 688;
-                    msg.arg1 = InnerPlayer.getCurrentPosition();
-                    TimeElapsedHandler.sendMessageDelayed(msg,50);
+                    TimeElapsedHandler.sendMessageDelayed(GetTimeElapsedMessage(),50);
                 }
                 break;
             }
@@ -50,6 +48,13 @@ public class SimpleMusicPlayer
         return true;
     }
 
+    private Message GetTimeElapsedMessage()
+    {
+        Message msg = new Message();
+        msg.what = 688;
+        msg.arg1 = InnerPlayer.getCurrentPosition();
+        return msg;
+    }
 
     public SimpleMusicPlayer(Context context)
     {
@@ -60,13 +65,24 @@ public class SimpleMusicPlayer
 
         MusicPlayStatus.subscribe((status) -> {
             if(status == MusicStatus.PAUSE && InnerPlayer.isPlaying())
-                InnerPlayer.pause();
+                _Pause();
             else if(status == MusicStatus.PLAY && IsPrepared.getValue()) {
-                InnerPlayer.start();
-                BeginDispatchElapsedTimeStamp();
+                _Play();
             }
         });
     }
+
+
+    private void _Play()
+    {
+        InnerPlayer.start();
+        BeginDispatchElapsedTimeStamp();
+    }
+    private void _Pause()
+    {
+        InnerPlayer.pause();
+    }
+
 
     private void OnFinishPrepare(MediaPlayer mediaPlayer)
     {
@@ -81,10 +97,7 @@ public class SimpleMusicPlayer
 
     public void BeginDispatchElapsedTimeStamp()
     {
-        Message message = new Message();
-        message.arg1 = InnerPlayer.getCurrentPosition();
-        message.what = 688;
-        TimeElapsedHandler.sendMessage(message);
+        TimeElapsedHandler.sendMessage(GetTimeElapsedMessage());
     }
 
     private void OnFinishSeek(MediaPlayer mp)
