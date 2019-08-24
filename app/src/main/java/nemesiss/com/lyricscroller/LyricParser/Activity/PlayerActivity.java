@@ -16,6 +16,8 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -34,15 +36,18 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
+import com.bumptech.glide.request.target.*;
+import com.bumptech.glide.request.transition.Transition;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import nemesiss.com.lyricscroller.LyricParser.Adapter.MusicDiscPagerAdapter;
 import nemesiss.com.lyricscroller.LyricParser.LyricParserImpl;
 import nemesiss.com.lyricscroller.LyricParser.Model.*;
+import nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer.TransformToPlayerBlurBackground;
+import nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer.TransformToPlayerDiscView;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
-import nemesiss.com.lyricscroller.LyricParser.Utils.FastBlurUtil;
 import nemesiss.com.lyricscroller.LyricParser.View.DiscView;
 import nemesiss.com.lyricscroller.LyricParser.View.MusicDiscPager;
 import nemesiss.com.lyricscroller.LyricParser.View.MusicStatus;
@@ -325,14 +330,12 @@ public abstract class PlayerActivity extends AppCompatActivity
             dv.setLyricViewClickListener(this::SwitchLyricToDisc);
 
             // 加载图片
-            LoadMusicAlbumPhoto(MusicInfoList.get(i).getAlbumPhoto(), new SimpleTarget<Bitmap>()
-            {
-                @Override
-                public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation)
-                {
-                    dv.SetDiscAlbumPhoto(resource);
-                }
-            });
+            LoadMusicAlbumPhoto(MusicInfoList.get(i).getAlbumPhoto(),
+                    new TransformToPlayerDiscView(
+                            804,
+                            getResources(),
+                            dv.getDiscBackgroundDrawable()),
+                    new DrawableImageViewTarget(dv.DiscImage));
         }
 
         if (musicDiscPagerAdapter == null)
@@ -721,7 +724,7 @@ public abstract class PlayerActivity extends AppCompatActivity
         discImage.setRotation(0);
     }
 
-    private void LoadMusicAlbumPhoto(String fileName, SimpleTarget<Bitmap> handler)
+    private void LoadMusicAlbumPhoto(String fileName, BitmapTransformation bitmapTransformation, Target target)
     {
 
         try
@@ -731,33 +734,19 @@ public abstract class PlayerActivity extends AppCompatActivity
             byte[] buffer = new byte[total];
             bis.read(buffer);
             bis.close();
-            Glide.with(PlayerActivity.this)
+            RequestBuilder<Drawable> rb = Glide.with(PlayerActivity.this)
                     .load(buffer)
-                    .asBitmap()
-                    .into(handler);
+                    .dontAnimate();
+            if(bitmapTransformation != null) {
+                rb = rb.transform(bitmapTransformation);
+            }
+            rb.into(target);
         } catch (IOException e)
         {
             e.printStackTrace();
         }
     }
 
-
-    private Drawable LoadPlayerBackgroundImage(Bitmap OriginalAlbumPhoto)
-    {
-        BitmapRectCropInfo cropInfo = DisplayUtil.GetPlayerBackgroundCropPixel(OriginalAlbumPhoto, DisplayWHRatio);
-
-        Bitmap croppedAlbumPhoto = Bitmap.createBitmap(OriginalAlbumPhoto,
-                cropInfo.getCropStartX(),
-                cropInfo.getCropStartY(),
-                cropInfo.getCropEndX() - cropInfo.getCropStartX(),
-                cropInfo.getCropEndY() - cropInfo.getCropStartY());
-
-        Bitmap blurBackground = FastBlurUtil.doBlur(croppedAlbumPhoto, 128, true);
-
-        Drawable backgroundDrawable = new BitmapDrawable(getResources(), blurBackground);
-        backgroundDrawable.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);
-        return backgroundDrawable;
-    }
 
     private void InitLikeMusicStatus(int position)
     {
@@ -812,15 +801,14 @@ public abstract class PlayerActivity extends AppCompatActivity
 
     private void OnPlayerBackgroundChanged(String NewFileName)
     {
-        LoadMusicAlbumPhoto(NewFileName, new SimpleTarget<Bitmap>()
+        LoadMusicAlbumPhoto(NewFileName, new TransformToPlayerBlurBackground(DisplayWHRatio), new SimpleTarget<Drawable>()
         {
             @Override
-            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation)
+            public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
             {
-                new Thread(() -> {
-                    Drawable drawable = LoadPlayerBackgroundImage(resource);
-                    runOnUiThread(() -> PlayerRootLayout.SetPlayerBackground(drawable));
-                }).start();
+                Drawable grayCover = resource.mutate().getConstantState().newDrawable();
+                grayCover.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);
+                PlayerRootLayout.SetPlayerBackground(resource);
             }
         });
     }

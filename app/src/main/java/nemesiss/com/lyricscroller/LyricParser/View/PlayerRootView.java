@@ -4,11 +4,10 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
+import android.transition.Fade;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.widget.RelativeLayout;
 
 public class PlayerRootView extends RelativeLayout
@@ -17,6 +16,8 @@ public class PlayerRootView extends RelativeLayout
     private Drawable DefaultBackgroundDrawable;
 
     private LayerDrawable BackgroundChangedLayer;
+
+    private ValueAnimator FadePlayerBackgroundAnimator;
 
     public PlayerRootView(Context context)
     {
@@ -49,9 +50,17 @@ public class PlayerRootView extends RelativeLayout
 
         Drawable NewPlayerBackgroundCopy = NewPlayerBackground.mutate().getConstantState().newDrawable();
 
-        ValueAnimator va = ValueAnimator.ofInt(0,255);
-        va.setDuration(500);
-        va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener()
+        if(FadePlayerBackgroundAnimator == null) {
+            FadePlayerBackgroundAnimator = ValueAnimator.ofInt(0,255);
+            FadePlayerBackgroundAnimator.setDuration(500);
+        }
+        else {
+            FadePlayerBackgroundAnimator.end();
+            FadePlayerBackgroundAnimator.removeAllListeners();
+            FadePlayerBackgroundAnimator.removeAllUpdateListeners();
+        }
+
+        FadePlayerBackgroundAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener()
         {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator)
@@ -62,7 +71,7 @@ public class PlayerRootView extends RelativeLayout
             }
         });
 
-        va.addListener(new AnimatorListenerAdapter()
+        FadePlayerBackgroundAnimator.addListener(new AnimatorListenerAdapter()
         {
             @Override
             public void onAnimationEnd(Animator animation)
@@ -79,6 +88,6 @@ public class PlayerRootView extends RelativeLayout
                 BackgroundChangedLayer.getDrawable(1).setAlpha(0);
             }
         });
-        va.start();
+        FadePlayerBackgroundAnimator.start();
     }
 }

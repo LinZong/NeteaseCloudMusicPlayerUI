@@ -3,7 +3,6 @@ package nemesiss.com.lyricscroller.LyricParser.View;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -17,12 +16,10 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toolbar;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -36,7 +33,6 @@ import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
 import nemesiss.com.lyricscroller.R;
 
 import java.util.Arrays;
-import java.util.List;
 
 public class DiscView extends RelativeLayout
 {
@@ -68,6 +64,7 @@ public class DiscView extends RelativeLayout
     public RelativeLayout LyricContainer;
 
 
+    @Getter
     private Drawable DiscBackgroundDrawable;
 
     // 歌词显示布局控制
