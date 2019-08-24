@@ -61,9 +61,9 @@ public class TransformToPlayerDiscView extends BitmapTransformation
     @Override
     public boolean equals(@Nullable Object obj)
     {
-        if (obj instanceof TransformToPlayerBlurBackground)
+        if (obj instanceof TransformToPlayerDiscView)
         {
-            TransformToPlayerBlurBackground tp = (TransformToPlayerBlurBackground) obj;
+            TransformToPlayerDiscView tp = (TransformToPlayerDiscView) obj;
             return RAND_ID == tp.RAND_ID;
         }
         return false;
@@ -80,18 +80,12 @@ public class TransformToPlayerDiscView extends BitmapTransformation
     {
         BitmapRectCropInfo cropInfo = DisplayUtil.GetAlbumPhotoCropPixel(toTransform);
 
-        float scaleRatio = (float) DiscImageWidth / cropInfo.getCroppedEdgeLength();
-        Matrix scaleMatrix = new Matrix();
-
-        scaleMatrix.postScale(scaleRatio, scaleRatio);
-
         Bitmap croppedAlbumBitmap = Bitmap.createBitmap(
                 toTransform,
                 cropInfo.getCropStartX(),
                 cropInfo.getCropStartY(),
                 cropInfo.getCroppedEdgeLength(),
-                cropInfo.getCroppedEdgeLength(), scaleMatrix, false);
-
+                cropInfo.getCroppedEdgeLength());
 
         RoundedBitmapDrawable RoundedAlbumBitmap = RoundedBitmapDrawableFactory.create(mResources, croppedAlbumBitmap);
         RoundedAlbumBitmap.setAntiAlias(true);
@@ -107,7 +101,7 @@ public class TransformToPlayerDiscView extends BitmapTransformation
                 musicPicMargin);
 
 
-        Bitmap bitmap = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap(outWidth, outHeight, toTransform.getConfig());
         Canvas canvas = new Canvas(bitmap);
         layerDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         layerDrawable.draw(canvas);

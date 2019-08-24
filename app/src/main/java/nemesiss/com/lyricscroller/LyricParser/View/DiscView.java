@@ -133,41 +133,6 @@ public class DiscView extends RelativeLayout
 
     // =========================  Control Disc View ======================================
 
-    public void SetDiscAlbumPhoto(Bitmap AlbumPhotoBitmap)
-    {
-        // Calculate crop info
-
-        BitmapRectCropInfo cropInfo = DisplayUtil.GetAlbumPhotoCropPixel(AlbumPhotoBitmap);
-
-        float scaleRatio = (float) mDiscImageWidth / cropInfo.getCroppedEdgeLength();
-        Matrix scaleMatrix = new Matrix();
-
-        scaleMatrix.postScale(scaleRatio, scaleRatio);
-
-        Bitmap croppedAlbumBitmap = Bitmap.createBitmap(
-                AlbumPhotoBitmap,
-                cropInfo.getCropStartX(),
-                cropInfo.getCropStartY(),
-                cropInfo.getCroppedEdgeLength(),
-                cropInfo.getCroppedEdgeLength(), scaleMatrix, false);
-
-
-        RoundedBitmapDrawable RoundedAlbumBitmap = RoundedBitmapDrawableFactory.create(getResources(), croppedAlbumBitmap);
-        RoundedAlbumBitmap.setAntiAlias(true);
-        RoundedAlbumBitmap.setCornerRadius(croppedAlbumBitmap.getWidth());
-
-        Drawable[] layers = {RoundedAlbumBitmap, DiscBackgroundDrawable};
-        LayerDrawable layerDrawable = new LayerDrawable(layers);
-
-        int musicPicMargin = (int) ((DisplayUtil.SCALE_DISC_SIZE - DisplayUtil
-                .SCALE_MUSIC_PIC_SIZE) * mDiscImageWidth / 2);
-        //调整专辑图片的四周边距，让其显示在正中
-        layerDrawable.setLayerInset(0, musicPicMargin, musicPicMargin, musicPicMargin,
-                musicPicMargin);
-
-        DiscImage.setImageDrawable(layerDrawable);
-    }
-
     private void InitDiscViewBackground()
     {
         DiscBackgroundDrawable = DiscImage.getDrawable();

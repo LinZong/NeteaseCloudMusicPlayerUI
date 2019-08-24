@@ -130,7 +130,6 @@ public abstract class PlayerActivity extends AppCompatActivity
     // 界面控件动画控制
 
 
-
     // 音乐播放控制
     private SimpleMusicPlayer MusicPlayer;
     private BehaviorSubject<MusicStatus> MusicPlayStatus;
@@ -258,23 +257,24 @@ public abstract class PlayerActivity extends AppCompatActivity
     // 仅作为测试用, 从Asset加载Music
     private void LoadMusicToPlayer(int position)
     {
-        try {
+        try
+        {
             MusicInfo mi = MusicInfoList.get(position);
-            if(mi.getFileType().equals(String.class)) {
+            if (mi.getFileType().equals(String.class))
+            {
                 MusicPlayer.LoadMusic((String) mi.getMusicFileName());
-            }
-            else if (mi.getFileType().equals(Uri.class)) {
+            } else if (mi.getFileType().equals(Uri.class))
+            {
                 MusicPlayer.LoadMusic((Uri) mi.getMusicFileName());
-            }
-            else if (mi.getFileType().equals(FileInputStream.class)) {
+            } else if (mi.getFileType().equals(FileInputStream.class))
+            {
                 MusicPlayer.LoadMusic((FileInputStream) mi.getMusicFileName());
-            }
-            else if (mi.getFileType().equals(AssetFileDescriptor.class)) {
+            } else if (mi.getFileType().equals(AssetFileDescriptor.class))
+            {
                 MusicPlayer.LoadMusic((AssetFileDescriptor) mi.getMusicFileName());
-            }
-            else throw new IllegalArgumentException("Music data source not supported! "+mi.getFileType().getName());
-        }
-        catch (IOException e) {
+            } else throw new IllegalArgumentException("Music data source not supported! " + mi.getFileType().getName());
+        } catch (IOException e)
+        {
             e.printStackTrace();
         }
     }
@@ -286,7 +286,7 @@ public abstract class PlayerActivity extends AppCompatActivity
 
         DiscAnimators = new ArrayList<>();
 
-        MusicInfo strMi = new MusicInfo<>("x","x", "x", null,"yy", false,String.class);
+        MusicInfo strMi = new MusicInfo<>("x", "x", "x", null, "yy", false, String.class);
 
         MusicInfoList = new ArrayList<>();
         try
@@ -696,8 +696,6 @@ public abstract class PlayerActivity extends AppCompatActivity
     }
 
 
-
-
     // ================= 播放相关控制 ===================
 
     private void ResetAllDiscRotation(int skip)
@@ -737,7 +735,8 @@ public abstract class PlayerActivity extends AppCompatActivity
             RequestBuilder<Drawable> rb = Glide.with(PlayerActivity.this)
                     .load(buffer)
                     .dontAnimate();
-            if(bitmapTransformation != null) {
+            if (bitmapTransformation != null)
+            {
                 rb = rb.transform(bitmapTransformation);
             }
             rb.into(target);
@@ -751,10 +750,11 @@ public abstract class PlayerActivity extends AppCompatActivity
     private void InitLikeMusicStatus(int position)
     {
         boolean like = MusicInfoList.get(position).isLikeMusic();
-        if(like) {
+        if (like)
+        {
             LikeMusicIv.setImageResource(R.drawable.like_red);
-        }
-        else {
+        } else
+        {
             LikeMusicIv.setImageResource(R.drawable.like);
         }
     }
@@ -801,16 +801,18 @@ public abstract class PlayerActivity extends AppCompatActivity
 
     private void OnPlayerBackgroundChanged(String NewFileName)
     {
-        LoadMusicAlbumPhoto(NewFileName, new TransformToPlayerBlurBackground(DisplayWHRatio), new SimpleTarget<Drawable>()
-        {
-            @Override
-            public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
-            {
-                Drawable grayCover = resource.mutate().getConstantState().newDrawable();
-                grayCover.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);
-                PlayerRootLayout.SetPlayerBackground(resource);
-            }
-        });
+        LoadMusicAlbumPhoto(NewFileName,
+                new TransformToPlayerBlurBackground(
+                        getResources(),
+                        DisplayWHRatio),
+                new SimpleTarget<Drawable>()
+                {
+                    @Override
+                    public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
+                    {
+                        PlayerRootLayout.SetPlayerBackground(resource);
+                    }
+                });
     }
 
     // =============== 绑定按钮点击事件 ==================
@@ -849,11 +851,12 @@ public abstract class PlayerActivity extends AppCompatActivity
         {
             // 会触发OnPageSelected，在那里加载新的歌曲
             int next = (curr + offset + last + 1) % (last + 1);
-            if(curr == next) {
+            if (curr == next)
+            {
                 // 这种情况下setCurrentItem不会有onPageSelected回调，直接继续播放即可。
                 Play();
-            }
-            else {
+            } else
+            {
                 MusicPlaylistPager.setCurrentItem(next, true);
                 PauseNeedleAnimation();
                 if (MusicPlayStatus.getValue() == MusicStatus.PLAY) PlayNeedleAnimation();
@@ -924,9 +927,13 @@ public abstract class PlayerActivity extends AppCompatActivity
     }
 
     abstract void HandleClickLikeMusic(MusicInfo mi);
+
     abstract void HandleClickDownload(MusicInfo mi);
+
     abstract void HandleClickShare(MusicInfo mi);
+
     abstract void HandleClickComments(MusicInfo mi);
+
     abstract void HandleClickMusicProperty(MusicInfo mi);
 
 
