@@ -2,9 +2,7 @@ package nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.support.annotation.NonNull;
@@ -14,7 +12,6 @@ import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import nemesiss.com.lyricscroller.LyricParser.Model.BitmapRectCropInfo;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
-import nemesiss.com.lyricscroller.LyricParser.Utils.DrawableToBitmap;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.UnsupportedEncodingException;
