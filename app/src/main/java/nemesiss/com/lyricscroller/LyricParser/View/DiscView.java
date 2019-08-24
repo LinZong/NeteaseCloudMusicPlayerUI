@@ -193,6 +193,7 @@ public class DiscView extends RelativeLayout
 
     private void ResetLyricView()
     {
+        CurrentLyricSentenceIndex = 0;
         // 滚回到第一句
         int recycleViewHeight = LyricScroller.getHeight();
         LyricRecyclerView.setPadding(0, recycleViewHeight / 2, 0, recycleViewHeight / 2);

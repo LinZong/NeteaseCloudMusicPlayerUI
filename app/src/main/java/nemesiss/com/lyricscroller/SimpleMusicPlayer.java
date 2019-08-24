@@ -171,4 +171,11 @@ public class SimpleMusicPlayer
         return InnerPlayer.getDuration();
     }
 
+    public void SafetyDestory()
+    {
+        MusicPlayStatus.onNext(MusicStatus.STOP);
+        IsPrepared.onNext(false);
+        InnerPlayer.reset();
+        InnerPlayer.release();
+    }
 }

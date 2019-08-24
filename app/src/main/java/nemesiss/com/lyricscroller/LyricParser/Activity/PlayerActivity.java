@@ -13,6 +13,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
@@ -236,39 +237,73 @@ public abstract class PlayerActivity extends AppCompatActivity
             }
         });
 
-
         // 外界传来的信息
         LoadLyric();
-        LoadMusicPages();
-
-    }
-
-    // ================= 外来文件加载 ======================
-
-    // 仅作为测试用, 从Asset加载Music
-    private void LoadMusicFromAssets(int position)
-    {
         try
         {
-            AssetFileDescriptor afd = getAssets().openFd(MusicInfoList.get(position).getMusicFileName());
-            MusicPlayer.LoadMusic(afd);
+            LoadMusicPages();
         } catch (IOException e)
         {
             e.printStackTrace();
         }
     }
 
-    private void LoadMusicPages()
+    // ================= 外来文件加载 ======================
+
+    // 仅作为测试用, 从Asset加载Music
+    private void LoadMusicToPlayer(int position)
+    {
+        try {
+            MusicInfo mi = MusicInfoList.get(position);
+            if(mi.getFileType().equals(String.class)) {
+                MusicPlayer.LoadMusic((String) mi.getMusicFileName());
+            }
+            else if (mi.getFileType().equals(Uri.class)) {
+                MusicPlayer.LoadMusic((Uri) mi.getMusicFileName());
+            }
+            else if (mi.getFileType().equals(FileInputStream.class)) {
+                MusicPlayer.LoadMusic((FileInputStream) mi.getMusicFileName());
+            }
+            else if (mi.getFileType().equals(AssetFileDescriptor.class)) {
+                MusicPlayer.LoadMusic((AssetFileDescriptor) mi.getMusicFileName());
+            }
+            else throw new IllegalArgumentException("Music data source not supported! "+mi.getFileType().getName());
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void LoadMusicPages() throws IOException
     {
         List<DiscView> dvs = new ArrayList<>();
         MusicDiscViews = dvs;
 
         DiscAnimators = new ArrayList<>();
 
-        // 准备一个假的播放列表
+        MusicInfo strMi = new MusicInfo<>("x","x", "x", null,"yy", false,String.class);
+
         MusicInfoList = new ArrayList<>();
-        MusicInfoList.add(new MusicInfo("今をかける少女", "初音ミク", DefaultBackgroundImage, ImawokakerushoujyoLrcInfo, "Imawokakerushoujyo.mp3",true));
-        MusicInfoList.add(new MusicInfo("シアワセシンドローム", "ナナヲアカリ", "71947756_p0.png", ShiawaseShindoromuLrcInfo, "ShiawaseShindoromu.mp3",false));
+        try
+        {
+            MusicInfoList.add(new MusicInfo<AssetFileDescriptor>("今をかける少女",
+                    "初音ミク",
+                    DefaultBackgroundImage,
+                    ImawokakerushoujyoLrcInfo,
+                    getAssets().openFd("Imawokakerushoujyo.mp3"),
+                    true,
+                    AssetFileDescriptor.class));
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        MusicInfoList.add(new MusicInfo<AssetFileDescriptor>("シアワセシンドローム",
+                "ナナヲアカリ",
+                "71947756_p0.png",
+                ShiawaseShindoromuLrcInfo,
+                getAssets().openFd("ShiawaseShindoromu.mp3"),
+                false,
+                AssetFileDescriptor.class));
 
         for (int i = 0; i < MusicInfoList.size(); i++)
         {
@@ -679,6 +714,8 @@ public abstract class PlayerActivity extends AppCompatActivity
 
 
         DiscView dv = MusicDiscViews.get(position);
+
+        // 歌词滚回原位 + 碟片旋转复原到0度
         dv.MeasureFirstLyricPaddingTop();
         ImageView discImage = dv.findViewById(R.id.disc_image);
         discImage.setRotation(0);
@@ -755,9 +792,7 @@ public abstract class PlayerActivity extends AppCompatActivity
         }
 
         OnMusicInfoChanged(MusicInfoList.get(position));
-
-
-        LoadMusicFromAssets(position);
+        LoadMusicToPlayer(position);
 
         ResetAllDiscRotation(position);
         OnPlayerBackgroundChanged(MusicInfoList.get(position).getAlbumPhoto());
@@ -825,10 +860,16 @@ public abstract class PlayerActivity extends AppCompatActivity
         if (0 <= curr && curr <= last || LoopMode.getValue() == PlayerLoopMode.LOOP_PLAY_LIST)
         {
             // 会触发OnPageSelected，在那里加载新的歌曲
-            MusicPlaylistPager.setCurrentItem((curr + offset + last + 1) % (last + 1), true);
-
-            PauseNeedleAnimation();
-            if (MusicPlayStatus.getValue() == MusicStatus.PLAY) PlayNeedleAnimation();
+            int next = (curr + offset + last + 1) % (last + 1);
+            if(curr == next) {
+                // 这种情况下setCurrentItem不会有onPageSelected回调，直接继续播放即可。
+                Play();
+            }
+            else {
+                MusicPlaylistPager.setCurrentItem(next, true);
+                PauseNeedleAnimation();
+                if (MusicPlayStatus.getValue() == MusicStatus.PLAY) PlayNeedleAnimation();
+            }
         } else MusicPlayStatus.onNext(MusicStatus.STOP);
     }
 
@@ -918,5 +959,12 @@ public abstract class PlayerActivity extends AppCompatActivity
     private int GetCurrentMusic()
     {
         return MusicPlaylistPager.getCurrentItem();
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        MusicPlayer.SafetyDestory();
     }
 }
