@@ -17,8 +17,8 @@ public class DisplayUtil {
     /*唱针宽高、距离等比例*/
     public static final float SCALE_NEEDLE_WIDTH = (float) (276.0 / BASE_SCREEN_WIDTH);
     public static final float SCALE_NEEDLE_MARGIN_LEFT = (float) (500.0 / BASE_SCREEN_WIDTH);
-    public static final float SCALE_NEEDLE_PIVOT_X = (float) (47.0 / 276);
-    public static final float SCALE_NEEDLE_PIVOT_Y = (float) (47.0 / 414);
+    public static final float SCALE_NEEDLE_PIVOT_X = (float) (48.4 / 276);
+    public static final float SCALE_NEEDLE_PIVOT_Y = (float) (49.15 / 414);
     public static final float SCALE_NEEDLE_HEIGHT = (float) (414.0 / BASE_SCREEN_HEIGHT);
     public static final float SCALE_NEEDLE_MARGIN_TOP = (float) (43.0 / BASE_SCREEN_HEIGHT);
 

@@ -394,6 +394,7 @@ public abstract class PlayerActivity extends AppCompatActivity
     // ================= 界面控件初始化控制 =================
     private void InitNeedle()
     {
+
         int needleWidth = NeedleIv.getWidth();
         int needleHeight = NeedleIv.getHeight();
 
@@ -405,7 +406,7 @@ public abstract class PlayerActivity extends AppCompatActivity
         NeedleIv.setLayoutParams(layoutParams);
 
         float pivotX = DisplayUtil.SCALE_NEEDLE_PIVOT_X * needleWidth;
-        float pivotY = DisplayUtil.SCALE_NEEDLE_PIVOT_X * needleHeight;
+        float pivotY = DisplayUtil.SCALE_NEEDLE_PIVOT_Y * needleHeight;
 
         NeedleIv.setPivotX(pivotX);
         NeedleIv.setPivotY(pivotY);
