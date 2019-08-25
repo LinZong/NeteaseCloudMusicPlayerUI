@@ -42,6 +42,7 @@
                android:layout_height="wrap_content"
                android:layout_below="@id/toolBar"
                android:id="@+id/llNeedle"
+               android:scaleType="centerInside"
                android:src="@drawable/ic_needle"/>
 
     <android.support.constraint.ConstraintLayout android:layout_width="match_parent"
