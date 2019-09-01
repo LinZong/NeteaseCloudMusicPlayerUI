@@ -12,7 +12,6 @@ public class FastBlurUtil
         } else {
             bitmap = sentBitmap.copy(sentBitmap.getConfig(), true);
         }
-
         if (radius < 1) {
             return (null);
         }

@@ -7,12 +7,8 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.ColorStateList;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -35,19 +31,19 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
-import com.bumptech.glide.request.target.*;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import nemesiss.com.lyricscroller.LyricParser.Adapter.MusicDiscPagerAdapter;
 import nemesiss.com.lyricscroller.LyricParser.LyricParserImpl;
-import nemesiss.com.lyricscroller.LyricParser.Model.*;
+import nemesiss.com.lyricscroller.LyricParser.Model.DiscNeedleStatus;
+import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
+import nemesiss.com.lyricscroller.LyricParser.Model.MusicInfo;
+import nemesiss.com.lyricscroller.LyricParser.Model.PlayerLoopMode;
 import nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer.TransformToPlayerBlurBackground;
-import nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer.TransformToPlayerDiscView;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
+import nemesiss.com.lyricscroller.LyricParser.Utils.ImageLoader;
 import nemesiss.com.lyricscroller.LyricParser.View.DiscView;
 import nemesiss.com.lyricscroller.LyricParser.View.MusicDiscPager;
 import nemesiss.com.lyricscroller.LyricParser.View.MusicStatus;
@@ -146,23 +142,18 @@ public abstract class PlayerActivity extends AppCompatActivity
         MusicPlayer = new SimpleMusicPlayer(PlayerActivity.this);
 
         // 播放时间更新
-        MusicPlayer.setTimeElapsedListener(new SimpleMusicPlayer.OnPlayerTimeElapsedListener()
-        {
-            @Override
-            public void update(int CurrentTimeStamp)
+        MusicPlayer.setTimeElapsedListener(CurrentTimeStamp -> {
+            if (!IsSeeking)
             {
-                if (!IsSeeking)
-                {
-                    int duration = CurrentPlayMusicDuration == 0 ? 0 : 100 * CurrentTimeStamp / MusicPlayer.getInnerPlayer().getDuration();
-                    CurrentTime.setText(Duration2Time(CurrentTimeStamp));
-                    DiscSeekbar.setProgress(duration);
-                }
-                // 歌词跟随
-                CurrentActiveDiscView.OnPlayerTimeChanged(CurrentTimeStamp);
+                int duration = CurrentPlayMusicDuration == 0 ? 0 : 100 * CurrentTimeStamp / MusicPlayer.getInnerPlayer().getDuration();
+                CurrentTime.setText(Duration2Time(CurrentTimeStamp));
+                DiscSeekbar.setProgress(duration);
             }
+            // 歌词跟随
+            CurrentActiveDiscView.OnPlayerTimeChanged(CurrentTimeStamp);
         });
-        MusicPlayStatus = MusicPlayer.getMusicPlayStatus();
 
+        MusicPlayStatus = MusicPlayer.getMusicPlayStatus();
         // 总时长更新
         MusicPlayer.getIsPrepared()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -214,30 +205,24 @@ public abstract class PlayerActivity extends AppCompatActivity
                 });
 
         // 播完后行为
-        MusicPlayer.getInnerPlayer().setOnCompletionListener(new MediaPlayer.OnCompletionListener()
-        {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer)
+        MusicPlayer.getInnerPlayer().setOnCompletionListener(mediaPlayer -> {
+            DiscSeekbar.setProgress(0);
+            switch (LoopMode.getValue())
             {
-                DiscSeekbar.setProgress(0);
-//                ResetDiscRotation(MusicPlaylistPager.getCurrentItem());
-                switch (LoopMode.getValue())
-                {
 
-                    case LOOP_PLAY_LIST:
-                        // 判断模式: 现在默认还是直接下一首:
-                        Next();
-                        break;
-                    case LOOP_SINGLE:
-                        Play();
-                        // 无需处理
-                        break;
-                    case RANDOM:
-                        SecureRandom sr = new SecureRandom();
-                        int next = sr.nextInt(MusicInfoList.size());
-                        PreparePlayMusic(next);
-                        break;
-                }
+                case LOOP_PLAY_LIST:
+                    // 判断模式: 现在默认还是直接下一首:
+                    Next();
+                    break;
+                case LOOP_SINGLE:
+                    Play();
+                    // 无需处理
+                    break;
+                case RANDOM:
+                    SecureRandom sr = new SecureRandom();
+                    int next = sr.nextInt(MusicInfoList.size());
+                    PreparePlayMusic(next);
+                    break;
             }
         });
 
@@ -254,7 +239,6 @@ public abstract class PlayerActivity extends AppCompatActivity
 
     // ================= 外来文件加载 ======================
 
-    // 仅作为测试用, 从Asset加载Music
     private void LoadMusicToPlayer(int position)
     {
         try
@@ -286,12 +270,10 @@ public abstract class PlayerActivity extends AppCompatActivity
 
         DiscAnimators = new ArrayList<>();
 
-        MusicInfo strMi = new MusicInfo<>("x", "x", "x", null, "yy", false, String.class);
-
         MusicInfoList = new ArrayList<>();
         try
         {
-            MusicInfoList.add(new MusicInfo<AssetFileDescriptor>("今をかける少女",
+            MusicInfoList.add(new MusicInfo<>("今をかける少女",
                     "初音ミク",
                     DefaultBackgroundImage,
                     ImawokakerushoujyoLrcInfo,
@@ -302,7 +284,7 @@ public abstract class PlayerActivity extends AppCompatActivity
         {
             e.printStackTrace();
         }
-        MusicInfoList.add(new MusicInfo<AssetFileDescriptor>("シアワセシンドローム",
+        MusicInfoList.add(new MusicInfo<>("シアワセシンドローム",
                 "ナナヲアカリ",
                 "71947756_p0.png",
                 ShiawaseShindoromuLrcInfo,
@@ -312,9 +294,6 @@ public abstract class PlayerActivity extends AppCompatActivity
 
         for (int i = 0; i < MusicInfoList.size(); i++)
         {
-            String title = MusicInfoList.get(i).getMusicName();
-            String artist = MusicInfoList.get(i).getArtistName();
-
 
             DiscView dv = (DiscView) LayoutInflater.from(PlayerActivity.this)
                     .inflate(R.layout.layout_single_discview, MusicPlaylistPager, false);
@@ -322,20 +301,13 @@ public abstract class PlayerActivity extends AppCompatActivity
             dvs.add(dv);
             ImageView discIv = dv.findViewById(R.id.disc_image);
             DiscAnimators.add(GetDiscAnimator(discIv));
-
             dv.InitLyrics(MusicInfoList.get(i).getLyrics());
+            dv.setMusicAlbumPhotoPath(MusicInfoList.get(i).getAlbumPhoto());
 
             dv.setDiscViewClickListener(this::SwitchDiscToLyric);
 
             dv.setLyricViewClickListener(this::SwitchLyricToDisc);
 
-            // 加载图片
-            LoadMusicAlbumPhoto(MusicInfoList.get(i).getAlbumPhoto(),
-                    new TransformToPlayerDiscView(
-                            804,
-                            getResources(),
-                            dv.getDiscBackgroundDrawable()),
-                    new DrawableImageViewTarget(dv.DiscImage));
         }
 
         if (musicDiscPagerAdapter == null)
@@ -354,11 +326,12 @@ public abstract class PlayerActivity extends AppCompatActivity
     private void LoadLyric()
     {
         InputStream lyricFileInputStream;
+        StringBuilder sb = new StringBuilder();
         try
         {
             lyricFileInputStream = getAssets().open(ShiawaseShindoromu);
-            StringBuilder sb = new StringBuilder();
             String line;
+
             try (BufferedReader br = new BufferedReader(new InputStreamReader(lyricFileInputStream)))
             {
                 while ((line = br.readLine()) != null)
@@ -367,16 +340,10 @@ public abstract class PlayerActivity extends AppCompatActivity
                 }
             }
             ShiawaseShindoromuLrcInfo = LyricParserImpl.ParseLyric(sb.toString());
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+            lyricFileInputStream.close();
+            sb.setLength(0);
 
-        try
-        {
             lyricFileInputStream = getAssets().open("Imawokakerushoujyo.lrc");
-            StringBuilder sb = new StringBuilder();
-            String line;
             try (BufferedReader br = new BufferedReader(new InputStreamReader(lyricFileInputStream)))
             {
                 while ((line = br.readLine()) != null)
@@ -385,6 +352,7 @@ public abstract class PlayerActivity extends AppCompatActivity
                 }
             }
             ImawokakerushoujyoLrcInfo = LyricParserImpl.ParseLyric(sb.toString());
+            lyricFileInputStream.close();
         } catch (IOException e)
         {
             e.printStackTrace();
@@ -623,9 +591,6 @@ public abstract class PlayerActivity extends AppCompatActivity
             oa.resume();
         else
             oa.start();
-
-        // 如果音乐没有播放，可以通知播放。
-        // MusicStatus = PLAY
     }
 
     private void PauseDiscAnimation(int position)
@@ -723,30 +688,6 @@ public abstract class PlayerActivity extends AppCompatActivity
         discImage.setRotation(0);
     }
 
-    private void LoadMusicAlbumPhoto(String fileName, BitmapTransformation bitmapTransformation, Target target)
-    {
-
-        try
-        {
-            BufferedInputStream bis = new BufferedInputStream(getAssets().open(fileName));
-            int total = bis.available();
-            byte[] buffer = new byte[total];
-            bis.read(buffer);
-            bis.close();
-            RequestBuilder<Drawable> rb = Glide.with(PlayerActivity.this)
-                    .load(buffer)
-                    .dontAnimate();
-            if (bitmapTransformation != null)
-            {
-                rb = rb.transform(bitmapTransformation);
-            }
-            rb.into(target);
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
 
     private void InitLikeMusicStatus(int position)
     {
@@ -781,11 +722,12 @@ public abstract class PlayerActivity extends AppCompatActivity
             CurrentActiveDiscView.LyricContainer.setAlpha(1f);
         }
 
+        ResetAllDiscRotation(position);
         OnMusicInfoChanged(MusicInfoList.get(position));
         LoadMusicToPlayer(position);
 
-        ResetAllDiscRotation(position);
-        OnPlayerBackgroundChanged(MusicInfoList.get(position).getAlbumPhoto());
+
+        ChangePlayerBackground(MusicInfoList.get(position).getAlbumPhoto());
 
     }
 
@@ -800,20 +742,10 @@ public abstract class PlayerActivity extends AppCompatActivity
         PlayerToolbar.setSubtitle(subTitle);
     }
 
-    private void OnPlayerBackgroundChanged(String NewFileName)
+
+    private void ChangePlayerBackground(String NewAlbumPhotoFilePath)
     {
-        LoadMusicAlbumPhoto(NewFileName,
-                new TransformToPlayerBlurBackground(
-                        getResources(),
-                        DisplayWHRatio),
-                new SimpleTarget<Drawable>()
-                {
-                    @Override
-                    public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
-                    {
-                        PlayerRootLayout.SetPlayerBackground(resource);
-                    }
-                });
+        PlayerRootLayout.OnPlayerBackgroundChanged(NewAlbumPhotoFilePath,DisplayWHRatio);
     }
 
     // =============== 绑定按钮点击事件 ==================

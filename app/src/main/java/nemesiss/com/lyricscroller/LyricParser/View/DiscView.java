@@ -4,13 +4,10 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
-import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
-import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,13 +20,16 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import com.bumptech.glide.request.target.DrawableImageViewTarget;
+import com.bumptech.glide.request.transition.Transition;
 import lombok.Getter;
 import lombok.Setter;
 import nemesiss.com.lyricscroller.LyricParser.Adapter.LyricRecycleAdapter;
-import nemesiss.com.lyricscroller.LyricParser.Model.BitmapRectCropInfo;
 import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
 import nemesiss.com.lyricscroller.LyricParser.Model.LyricSentence;
+import nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer.TransformToPlayerDiscView;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
+import nemesiss.com.lyricscroller.LyricParser.Utils.ImageLoader;
 import nemesiss.com.lyricscroller.R;
 
 import java.util.Arrays;
@@ -41,8 +41,8 @@ public class DiscView extends RelativeLayout
 
     // 屏幕尺寸相关数据
 
-    private int mDiscImageWidth;
-    private int mDiscImageHeight;
+    private int mDiscImageWidth = 804;
+    private int mDiscImageHeight = 804;
     private int mScreenHeight;
     private int mScreenWidth;
 
@@ -65,7 +65,7 @@ public class DiscView extends RelativeLayout
 
 
     @Getter
-    private Drawable DiscBackgroundDrawable;
+    private Drawable DiscDefaultBackgroundDrawable;
 
     // 歌词显示布局控制
 
@@ -102,6 +102,17 @@ public class DiscView extends RelativeLayout
     }
 
 
+    // Lazy init status
+
+    private boolean MusicAlbumLoaded = false;
+
+    private boolean LyricLoaded = false;
+
+    @Getter
+    @Setter
+    private String MusicAlbumPhotoPath = null;
+
+
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b)
     {
@@ -109,7 +120,6 @@ public class DiscView extends RelativeLayout
 
         mDiscImageWidth = DiscImage.getWidth();
         mDiscImageHeight = DiscImage.getHeight();
-
     }
 
     @Override
@@ -126,16 +136,22 @@ public class DiscView extends RelativeLayout
         mScreenWidth = DisplayUtil.getScreenWidth(getContext());
         mScreenHeight = DisplayUtil.getScreenHeight(getContext());
 
-        InitDiscViewBackground();
-
+        InitDefaultDiscViewBackground();
     }
+
+
+    public void EnsureLazyInitFinished()
+    {
+        LoadMusicAlbumPhoto(MusicAlbumPhotoPath);
+    }
+
 
 
     // =========================  Control Disc View ======================================
 
-    private void InitDiscViewBackground()
+    private void InitDefaultDiscViewBackground()
     {
-        DiscBackgroundDrawable = DiscImage.getDrawable();
+        DiscDefaultBackgroundDrawable = DiscImage.getDrawable();
 
         int marginTop = (int) (DisplayUtil.SCALE_DISC_MARGIN_TOP * mScreenHeight);
         RelativeLayout.LayoutParams layoutParams = (LayoutParams) DiscImage
@@ -150,6 +166,24 @@ public class DiscView extends RelativeLayout
         DiscImage.setLayoutParams(layoutParams);
     }
 
+    private void LoadMusicAlbumPhoto(String fileNameInAssets)
+    {
+        // This method is working for load music album photo from assets.
+        // For resources from network or local absolute path plz use method below.
+
+        ImageLoader.LoadMusicAlbumPhotoForAssets(
+                getContext(),
+                fileNameInAssets,
+                new TransformToPlayerDiscView(mDiscImageWidth,getResources(), DiscDefaultBackgroundDrawable),
+                new DrawableImageViewTarget(DiscImage) {
+                    @Override
+                    public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
+                    {
+                        super.onResourceReady(resource, transition);
+                        MusicAlbumLoaded = true;
+                    }
+                });
+    }
 
     // =========================  Control Lyric View ======================================
 
@@ -200,7 +234,7 @@ public class DiscView extends RelativeLayout
         va.start();
     }
 
-    public void InitLyrics(LyricInfo lyricInfo)
+    public synchronized void InitLyrics(LyricInfo lyricInfo)
     {
         CurrentLyricSentenceIndex = 0;
 
@@ -231,6 +265,7 @@ public class DiscView extends RelativeLayout
         }
 
         // Let first sentence position to center.
+        LyricLoaded = true;
         MeasureFirstLyricPaddingTop();
     }
 
@@ -243,8 +278,6 @@ public class DiscView extends RelativeLayout
             return;
         } else if (shouldRender == -1)
         {
-//            ClearAllHighlight();
-
             shouldRender = GetCurrentLyricPosition(curr, 0, lyricInfo.getSentences().size());
 
             int fsr = shouldRender;
@@ -354,8 +387,6 @@ public class DiscView extends RelativeLayout
         });
         SwitchDiscAndLyricAnimator.start();
     }
-
-
     private int Dp2Px(int dp)
     {
         final float scale = getResources().getDisplayMetrics().density;

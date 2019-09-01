@@ -24,6 +24,7 @@ public class MusicDiscPagerAdapter extends PagerAdapter
     public Object instantiateItem(@NonNull ViewGroup container, int position)
     {
         DiscView dv = MusicDiscList.get(position);
+        dv.EnsureLazyInitFinished();
         container.addView(dv,position);
         return dv;
     }

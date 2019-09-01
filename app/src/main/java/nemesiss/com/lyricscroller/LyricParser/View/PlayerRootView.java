@@ -6,9 +6,17 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
-import android.transition.Fade;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
+import com.bumptech.glide.request.transition.Transition;
+import nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer.TransformToPlayerBlurBackground;
+import nemesiss.com.lyricscroller.LyricParser.Utils.ImageLoader;
 
 public class PlayerRootView extends RelativeLayout
 {
@@ -34,6 +42,7 @@ public class PlayerRootView extends RelativeLayout
         super(context, attrs, defStyleAttr);
     }
 
+    private Target LastBackgroundImageLoadRequest = null;
 
     @Override
     protected void onFinishInflate()
@@ -45,7 +54,7 @@ public class PlayerRootView extends RelativeLayout
         BackgroundChangedLayer.setId(1,1);
     }
 
-    public void SetPlayerBackground(Drawable NewPlayerBackground)
+    private void SetPlayerBackground(Drawable NewPlayerBackground)
     {
 
         Drawable NewPlayerBackgroundCopy = NewPlayerBackground.mutate().getConstantState().newDrawable();
@@ -89,5 +98,30 @@ public class PlayerRootView extends RelativeLayout
             }
         });
         FadePlayerBackgroundAnimator.start();
+    }
+
+    public void OnPlayerBackgroundChanged(String NewFileName,float DisplayWHRatio)
+    {
+        // 解决快速切歌的情况下Background加载错误。
+        if(LastBackgroundImageLoadRequest != null) {
+            Glide.with(getContext()).pauseRequests();
+            Glide.with(getContext()).resumeRequests();
+        }
+
+        LastBackgroundImageLoadRequest = ImageLoader.LoadMusicAlbumPhotoForAssets(
+                getContext(),
+                NewFileName,
+                new TransformToPlayerBlurBackground(
+                        getResources(),
+                        DisplayWHRatio),
+                new SimpleTarget<Drawable>()
+                {
+                    @Override
+                    public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
+                    {
+                        SetPlayerBackground(resource);
+                        LastBackgroundImageLoadRequest = null;
+                    }
+                });
     }
 }
