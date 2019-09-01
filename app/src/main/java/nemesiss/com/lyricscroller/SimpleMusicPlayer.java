@@ -1,13 +1,11 @@
 package nemesiss.com.lyricscroller;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
-
 import android.util.Log;
 import io.reactivex.subjects.BehaviorSubject;
 import lombok.Getter;

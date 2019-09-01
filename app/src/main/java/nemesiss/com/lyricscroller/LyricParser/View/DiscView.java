@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -142,7 +143,10 @@ public class DiscView extends RelativeLayout
 
     public void EnsureLazyInitFinished()
     {
-        LoadMusicAlbumPhoto(MusicAlbumPhotoPath);
+        if(!MusicAlbumLoaded)
+            LoadMusicAlbumPhoto(MusicAlbumPhotoPath);
+        if(!LyricLoaded)
+            InitLyrics(lyricInfo);
     }
 
 
@@ -171,18 +175,23 @@ public class DiscView extends RelativeLayout
         // This method is working for load music album photo from assets.
         // For resources from network or local absolute path plz use method below.
 
-        ImageLoader.LoadMusicAlbumPhotoForAssets(
-                getContext(),
-                fileNameInAssets,
-                new TransformToPlayerDiscView(mDiscImageWidth,getResources(), DiscDefaultBackgroundDrawable),
-                new DrawableImageViewTarget(DiscImage) {
-                    @Override
-                    public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
-                    {
-                        super.onResourceReady(resource, transition);
-                        MusicAlbumLoaded = true;
-                    }
-                });
+        if(TextUtils.isEmpty(fileNameInAssets)) {
+            DiscImage.setImageDrawable(DiscDefaultBackgroundDrawable);
+        }
+        else {
+            ImageLoader.LoadMusicAlbumPhotoForAssets(
+                    getContext(),
+                    fileNameInAssets,
+                    new TransformToPlayerDiscView(mDiscImageWidth,getResources(), DiscDefaultBackgroundDrawable),
+                    new DrawableImageViewTarget(DiscImage) {
+                        @Override
+                        public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition)
+                        {
+                            super.onResourceReady(resource, transition);
+                            MusicAlbumLoaded = true;
+                        }
+                    });
+        }
     }
 
     // =========================  Control Lyric View ======================================

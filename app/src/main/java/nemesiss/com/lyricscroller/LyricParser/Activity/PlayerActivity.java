@@ -745,7 +745,7 @@ public abstract class PlayerActivity extends AppCompatActivity
 
     private void ChangePlayerBackground(String NewAlbumPhotoFilePath)
     {
-        PlayerRootLayout.OnPlayerBackgroundChanged(NewAlbumPhotoFilePath,DisplayWHRatio);
+        PlayerRootLayout.OnPlayerBackgroundChanged(NewAlbumPhotoFilePath);
     }
 
     // =============== 绑定按钮点击事件 ==================

@@ -2,6 +2,7 @@ package nemesiss.com.lyricscroller.LyricParser.Utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import nemesiss.com.lyricscroller.LyricParser.Activity.PlayerActivity;
 import nemesiss.com.lyricscroller.LyricParser.Model.BitmapRectCropInfo;
 
 
@@ -37,6 +38,12 @@ public class DisplayUtil {
     /*设备屏幕高度*/
     public static int getScreenHeight(Context context) {
         return context.getResources().getDisplayMetrics().heightPixels;
+    }
+
+    public static float getScreenWHRatio(Context context) {
+        int screenWidth = DisplayUtil.getScreenWidth(context);
+        int screenHeight = DisplayUtil.getScreenHeight(context);
+        return (float) screenWidth / screenHeight;
     }
 
     public static BitmapRectCropInfo GetAlbumPhotoCropPixel(Bitmap OriginalAlbumPhoto)
