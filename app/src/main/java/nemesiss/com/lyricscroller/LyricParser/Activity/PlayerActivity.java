@@ -8,12 +8,9 @@ import android.annotation.SuppressLint;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -31,8 +28,6 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.transition.Transition;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import nemesiss.com.lyricscroller.LyricParser.Adapter.MusicDiscPagerAdapter;
@@ -41,9 +36,7 @@ import nemesiss.com.lyricscroller.LyricParser.Model.DiscNeedleStatus;
 import nemesiss.com.lyricscroller.LyricParser.Model.LyricInfo;
 import nemesiss.com.lyricscroller.LyricParser.Model.MusicInfo;
 import nemesiss.com.lyricscroller.LyricParser.Model.PlayerLoopMode;
-import nemesiss.com.lyricscroller.LyricParser.Utils.BitmapTransformer.TransformToPlayerBlurBackground;
 import nemesiss.com.lyricscroller.LyricParser.Utils.DisplayUtil;
-import nemesiss.com.lyricscroller.LyricParser.Utils.ImageLoader;
 import nemesiss.com.lyricscroller.LyricParser.View.DiscView;
 import nemesiss.com.lyricscroller.LyricParser.View.MusicDiscPager;
 import nemesiss.com.lyricscroller.LyricParser.View.MusicStatus;
@@ -138,103 +131,105 @@ public abstract class PlayerActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         ButterKnife.bind(this);
-
         MusicPlayer = new SimpleMusicPlayer(PlayerActivity.this);
 
-        // 播放时间更新
-        MusicPlayer.setTimeElapsedListener(CurrentTimeStamp -> {
-            if (!IsSeeking)
+        new Thread(() -> {
+            // 播放时间更新
+            MusicPlayer.setTimeElapsedListener(CurrentTimeStamp -> {
+                if (!IsSeeking)
+                {
+                    int duration = CurrentPlayMusicDuration == 0 ? 0 : 100 * CurrentTimeStamp / MusicPlayer.getInnerPlayer().getDuration();
+                    CurrentTime.setText(Duration2Time(CurrentTimeStamp));
+                    DiscSeekbar.setProgress(duration);
+                }
+                // 歌词跟随
+                CurrentActiveDiscView.OnPlayerTimeChanged(CurrentTimeStamp);
+            });
+
+            MusicPlayStatus = MusicPlayer.getMusicPlayStatus();
+            // 总时长更新
+            MusicPlayer.getIsPrepared()
+                    .subscribeOn(AndroidSchedulers.mainThread())
+                    .subscribe((status) -> {
+                        if (status)
+                        {
+                            CurrentPlayMusicDuration = MusicPlayer.getInnerPlayer().getDuration();
+                            TotalTime.setText(Duration2Time(CurrentPlayMusicDuration));
+                        }
+                    });
+
+            MusicPlayStatus.subscribe((status) -> {
+                Log.d("PlayerActivity", "当前播放器状态: " + status);
+                switch (status)
+                {
+                    case PLAY:
+                        PlayOrPauseButtonIv.setImageResource(R.drawable.pause);
+                        break;
+                    case PAUSE:
+                    case STOP:
+                        PlayOrPauseButtonIv.setImageResource(R.drawable.play);
+                        break;
+                }
+            });
+
+            LoopMode.subscribeOn(AndroidSchedulers.mainThread())
+                    .subscribe((loop) -> {
+                        switch (loop)
+                        {
+                            case LOOP_PLAY_LIST:
+                                LoopModeIv.setImageResource(R.drawable.looplist);
+                                break;
+                            case LOOP_SINGLE:
+                                LoopModeIv.setImageResource(R.drawable.loopsingle);
+                                break;
+                            case RANDOM:
+                                LoopModeIv.setImageResource(R.drawable.random);
+                                break;
+                        }
+                    });
+
+            // 播完后行为
+            MusicPlayer.getInnerPlayer().setOnCompletionListener(mediaPlayer -> {
+                DiscSeekbar.setProgress(0);
+                switch (LoopMode.getValue())
+                {
+
+                    case LOOP_PLAY_LIST:
+                        // 判断模式: 现在默认还是直接下一首:
+                        Next();
+                        break;
+                    case LOOP_SINGLE:
+                        Play();
+                        // 无需处理
+                        break;
+                    case RANDOM:
+                        SecureRandom sr = new SecureRandom();
+                        int next = sr.nextInt(MusicInfoList.size());
+                        PreparePlayMusic(next);
+                        break;
+                }
+            });
+        }).start();
+
+        new Thread(() -> {
+            InitNeedleAnimator();
+            InitScreenResolution();
+        }).start();
+
+        new Thread(() -> {
+            LoadLyric();
+            try
             {
-                int duration = CurrentPlayMusicDuration == 0 ? 0 : 100 * CurrentTimeStamp / MusicPlayer.getInnerPlayer().getDuration();
-                CurrentTime.setText(Duration2Time(CurrentTimeStamp));
-                DiscSeekbar.setProgress(duration);
+                LoadMusicPages();
+            } catch (IOException e)
+            {
+                e.printStackTrace();
             }
-            // 歌词跟随
-            CurrentActiveDiscView.OnPlayerTimeChanged(CurrentTimeStamp);
-        });
-
-        MusicPlayStatus = MusicPlayer.getMusicPlayStatus();
-        // 总时长更新
-        MusicPlayer.getIsPrepared()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe((status) -> {
-                    if (status)
-                    {
-                        CurrentPlayMusicDuration = MusicPlayer.getInnerPlayer().getDuration();
-                        TotalTime.setText(Duration2Time(CurrentPlayMusicDuration));
-                    }
-                });
-
-
+        }).start();
         NeedleIv.post(this::InitNeedle);
-        InitNeedleAnimator();
-        InitScreenResolution();
         MakeStatusBarTransparent();
         InitSeekbar();
         InitMusicPager();
-
-        // 音乐播放状态更新
-        MusicPlayStatus.subscribe((status) -> {
-            Log.d("PlayerActivity", "当前播放器状态: " + status);
-            switch (status)
-            {
-                case PLAY:
-                    PlayOrPauseButtonIv.setImageResource(R.drawable.pause);
-                    break;
-                case PAUSE:
-                case STOP:
-                    PlayOrPauseButtonIv.setImageResource(R.drawable.play);
-                    break;
-            }
-        });
-
-        LoopMode.subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe((loop) -> {
-                    switch (loop)
-                    {
-                        case LOOP_PLAY_LIST:
-                            LoopModeIv.setImageResource(R.drawable.looplist);
-                            break;
-                        case LOOP_SINGLE:
-                            LoopModeIv.setImageResource(R.drawable.loopsingle);
-                            break;
-                        case RANDOM:
-                            LoopModeIv.setImageResource(R.drawable.random);
-                            break;
-                    }
-                });
-
-        // 播完后行为
-        MusicPlayer.getInnerPlayer().setOnCompletionListener(mediaPlayer -> {
-            DiscSeekbar.setProgress(0);
-            switch (LoopMode.getValue())
-            {
-
-                case LOOP_PLAY_LIST:
-                    // 判断模式: 现在默认还是直接下一首:
-                    Next();
-                    break;
-                case LOOP_SINGLE:
-                    Play();
-                    // 无需处理
-                    break;
-                case RANDOM:
-                    SecureRandom sr = new SecureRandom();
-                    int next = sr.nextInt(MusicInfoList.size());
-                    PreparePlayMusic(next);
-                    break;
-            }
-        });
-
-        // 外界传来的信息
-        LoadLyric();
-        try
-        {
-            LoadMusicPages();
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-        }
     }
 
     // ================= 外来文件加载 ======================
@@ -310,17 +305,19 @@ public abstract class PlayerActivity extends AppCompatActivity
 
         }
 
-        if (musicDiscPagerAdapter == null)
-        {
-            musicDiscPagerAdapter = new MusicDiscPagerAdapter(dvs);
-            MusicPlaylistPager.setAdapter(musicDiscPagerAdapter);
-        } else
-        {
-            musicDiscPagerAdapter.setMusicDiscList(dvs);
-            musicDiscPagerAdapter.notifyDataSetChanged();
-        }
+        runOnUiThread(() -> {
+            if (musicDiscPagerAdapter == null)
+            {
+                musicDiscPagerAdapter = new MusicDiscPagerAdapter(dvs);
+                MusicPlaylistPager.setAdapter(musicDiscPagerAdapter);
+            } else
+            {
+                musicDiscPagerAdapter.setMusicDiscList(dvs);
+                musicDiscPagerAdapter.notifyDataSetChanged();
+            }
 
-        PreparePlayMusic(0);
+            PreparePlayMusic(0);
+        });
     }
 
     private void LoadLyric()
